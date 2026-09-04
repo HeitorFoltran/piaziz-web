@@ -9,6 +9,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/**"],
+      exclude: ["src/components/ui/**", "src/main.tsx", "src/test/**", "src/vite-env.d.ts"],
+    },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
