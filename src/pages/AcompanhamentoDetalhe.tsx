@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Plus, Send, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckboxOptionList } from "@/components/ficha/CheckboxOptionList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos } from "@/lib/api";
+import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
@@ -52,6 +53,8 @@ export default function AcompanhamentoDetalhe() {
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
   const [fichaExpandida, setFichaExpandida] = useState(false);
+  const [tiposModalOpen, setTiposModalOpen] = useState(false);
+  const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
 
   const { data: ficha, isLoading, isError, error } = useQuery({
     queryKey: ["ficha", id],
@@ -63,6 +66,12 @@ export default function AcompanhamentoDetalhe() {
     queryKey: ["servicos"],
     queryFn: getServicos,
     enabled: encModalOpen,
+  });
+
+  const { data: catalogoTipos = [] } = useQuery({
+    queryKey: ["tipos-acompanhamento"],
+    queryFn: getTiposAcompanhamento,
+    enabled: tiposModalOpen,
   });
 
   const interacaoMutation = useMutation({
@@ -95,6 +104,26 @@ export default function AcompanhamentoDetalhe() {
     },
     onError: (err: Error) => toast.error(err.message),
   });
+
+  const tiposMutation = useMutation({
+    mutationFn: (tipoIds: number[]) => atribuirTiposAcompanhamento(id!, tipoIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ficha", id] });
+      queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
+      setTiposModalOpen(false);
+      toast.success("Tipos de acompanhamento atualizados!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const abrirModalTipos = () => {
+    setTiposSelecionados((ficha?.tiposAcompanhamento ?? []).map((t) => String(t.id)));
+    setTiposModalOpen(true);
+  };
+
+  const handleSalvarTipos = () => {
+    tiposMutation.mutate(tiposSelecionados.map(Number));
+  };
 
   const handleEnviarComentario = () => {
     const texto = novoComentario.trim();
@@ -171,6 +200,19 @@ export default function AcompanhamentoDetalhe() {
                 <div><span className="text-muted-foreground block text-xs">Nº Caso</span><span className="font-medium">{ficha?.numeroCaso ?? "-"}</span></div>
                 <div><span className="text-muted-foreground block text-xs">Data Criação</span><span className="font-medium">{formatDate(ficha?.dataCriacao)}</span></div>
                 <div><span className="text-muted-foreground block text-xs">Última Atualização</span><span className="font-medium">{formatDate(ficha?.dataAtualizacao)}</span></div>
+                <div className="flex flex-col gap-2">
+                  <span className="text-muted-foreground block text-xs">Tipos de Acompanhamento</span>
+                  <div className="flex flex-wrap items-center gap-1">
+                    {(ficha?.tiposAcompanhamento ?? []).map((t) => (
+                      <Badge key={t.id} className="bg-aziz-blue/10 text-aziz-blue border-aziz-blue/20">
+                        {t.nome}
+                      </Badge>
+                    ))}
+                    <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={abrirModalTipos}>
+                      Gerenciar
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
@@ -369,6 +411,36 @@ export default function AcompanhamentoDetalhe() {
             <Button variant="outline" onClick={() => setEncModalOpen(false)}>Cancelar</Button>
             <Button className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground" onClick={handleCriarEncaminhamento} disabled={encaminhamentoMutation.isPending}>
               {encaminhamentoMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={tiposModalOpen} onOpenChange={setTiposModalOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Tipos de Acompanhamento</DialogTitle>
+          </DialogHeader>
+          {catalogoTipos.length > 0 ? (
+            <CheckboxOptionList
+              idPrefix="tipo-acomp"
+              options={catalogoTipos.map((t) => ({ v: String(t.id), l: t.nome }))}
+              value={tiposSelecionados}
+              onValueChange={setTiposSelecionados}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Nenhum tipo cadastrado — cadastre em Cadastros &gt; Tipos de Acompanhamento.
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTiposModalOpen(false)}>Cancelar</Button>
+            <Button
+              className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground"
+              onClick={handleSalvarTipos}
+              disabled={tiposMutation.isPending}
+            >
+              {tiposMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
