@@ -14,6 +14,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
 import type { EncaminhamentoRequest } from "@/types/api";
 
@@ -86,11 +87,11 @@ export default function AcompanhamentoDetalhe() {
   });
 
   const statusMutation = useMutation({
-    mutationFn: (novoStatus: "ATIVO" | "INATIVO") => atualizarStatusFicha(id!, novoStatus),
+    mutationFn: (novoStatus: StatusFicha) => atualizarStatusFicha(id!, novoStatus),
     onSuccess: (fichaAtualizada) => {
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
       queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
-      toast.success(`Status alterado para ${fichaAtualizada.status === "ATIVO" ? "Ativo" : "Inativo"}.`);
+      toast.success(`Status alterado para ${STATUS_LABEL[fichaAtualizada.status as StatusFicha]}.`);
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -116,13 +117,6 @@ export default function AcompanhamentoDetalhe() {
     };
     encaminhamentoMutation.mutate(body);
   };
-
-  const handleToggleStatus = () => {
-    if (!ficha) return;
-    statusMutation.mutate(ficha.status === "ATIVO" ? "INATIVO" : "ATIVO");
-  };
-
-  const isAtivo = ficha?.status === "ATIVO";
 
   return (
     <Layout>
@@ -153,12 +147,20 @@ export default function AcompanhamentoDetalhe() {
                 <div className="flex flex-col gap-2">
                   <span className="text-muted-foreground block text-xs">Status</span>
                   <div className="flex items-center gap-2">
-                    <Badge className={isAtivo ? "bg-aziz-green/10 text-aziz-green border-aziz-green/20" : "bg-muted text-muted-foreground border-border"}>
-                      {isAtivo ? "Ativo" : "Inativo"}
-                    </Badge>
-                    <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={handleToggleStatus} disabled={statusMutation.isPending}>
-                      {statusMutation.isPending ? "..." : isAtivo ? "Inativar" : "Reativar"}
-                    </Button>
+                    <Select
+                      value={ficha?.status}
+                      onValueChange={(v) => statusMutation.mutate(v as StatusFicha)}
+                      disabled={statusMutation.isPending}
+                    >
+                      <SelectTrigger className={`h-7 w-[130px] text-xs ${ficha ? STATUS_BADGE_CLASS[ficha.status as StatusFicha] : ""}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(STATUS_LABEL) as StatusFicha[]).map((s) => (
+                          <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Link to={`/acompanhamentos/${id}/editar`}>
     <Button size="sm" variant="outline" className="h-6 text-xs px-2">
       Editar ficha
@@ -202,7 +204,13 @@ export default function AcompanhamentoDetalhe() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Timeline de Encaminhamentos</h2>
-              <Button size="sm" className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground" onClick={() => setEncModalOpen(true)}>
+              <Button
+                size="sm"
+                className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground"
+                onClick={() => setEncModalOpen(true)}
+                disabled={ficha?.status === "ENCERRADO"}
+                title={ficha?.status === "ENCERRADO" ? "Reative o acompanhamento para novos encaminhamentos" : undefined}
+              >
                 <Plus className="w-4 h-4 mr-1" /> Novo Encaminhamento
               </Button>
             </div>

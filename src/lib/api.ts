@@ -123,7 +123,7 @@ export function createFicha(body: FichaRequest): Promise<Ficha> {
 
 export function atualizarStatusFicha(
   id: number | string,
-  status: "ATIVO" | "INATIVO",
+  status: "ATIVO" | "PAUSADO" | "ENCERRADO",
 ): Promise<Ficha> {
   return request<Ficha>(`/api/fichas/${id}/status?status=${status}`, { method: "PATCH" });
 }
