@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Plus, Send, ChevronDown, ChevronUp } from "lucide-react";
-import { CheckboxOptionList } from "@/components/ficha/CheckboxOptionList";
+import { TiposAcompanhamentoDropdown } from "@/components/ficha/TiposAcompanhamentoDropdown";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, 
 import { formatDate } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
-import type { EncaminhamentoRequest } from "@/types/api";
+import type { EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
 
 const tipoMoradiaLabel: Record<string, string> = {
   CASA_PROPRIA: "Casa própria",
@@ -53,8 +53,6 @@ export default function AcompanhamentoDetalhe() {
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
   const [fichaExpandida, setFichaExpandida] = useState(false);
-  const [tiposModalOpen, setTiposModalOpen] = useState(false);
-  const [tiposSelecionados, setTiposSelecionados] = useState<string[]>([]);
 
   const { data: ficha, isLoading, isError, error } = useQuery({
     queryKey: ["ficha", id],
@@ -71,7 +69,6 @@ export default function AcompanhamentoDetalhe() {
   const { data: catalogoTipos = [] } = useQuery({
     queryKey: ["tipos-acompanhamento"],
     queryFn: getTiposAcompanhamento,
-    enabled: tiposModalOpen,
   });
 
   const interacaoMutation = useMutation({
@@ -110,19 +107,16 @@ export default function AcompanhamentoDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
       queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
-      setTiposModalOpen(false);
-      toast.success("Tipos de acompanhamento atualizados!");
     },
     onError: (err: Error) => toast.error(err.message),
   });
 
-  const abrirModalTipos = () => {
-    setTiposSelecionados((ficha?.tiposAcompanhamento ?? []).map((t) => String(t.id)));
-    setTiposModalOpen(true);
-  };
-
-  const handleSalvarTipos = () => {
-    tiposMutation.mutate(tiposSelecionados.map(Number));
+  const handleToggleTipo = (tipo: TipoAcompanhamento, checked: boolean) => {
+    const atuaisIds = (ficha?.tiposAcompanhamento ?? []).map((t) => t.id);
+    const novosIds = checked
+      ? [...atuaisIds, tipo.id]
+      : atuaisIds.filter((tid) => tid !== tipo.id);
+    tiposMutation.mutate(novosIds);
   };
 
   const handleEnviarComentario = () => {
@@ -202,16 +196,12 @@ export default function AcompanhamentoDetalhe() {
                 <div><span className="text-muted-foreground block text-xs">Última Atualização</span><span className="font-medium">{formatDate(ficha?.dataAtualizacao)}</span></div>
                 <div className="flex flex-col gap-2">
                   <span className="text-muted-foreground block text-xs">Tipos de Acompanhamento</span>
-                  <div className="flex flex-wrap items-center gap-1">
-                    {(ficha?.tiposAcompanhamento ?? []).map((t) => (
-                      <Badge key={t.id} className="bg-aziz-blue/10 text-aziz-blue border-aziz-blue/20">
-                        {t.nome}
-                      </Badge>
-                    ))}
-                    <Button size="sm" variant="outline" className="h-6 text-xs px-2" onClick={abrirModalTipos}>
-                      Gerenciar
-                    </Button>
-                  </div>
+                  <TiposAcompanhamentoDropdown
+                    catalogo={catalogoTipos}
+                    selecionados={ficha?.tiposAcompanhamento ?? []}
+                    onToggle={handleToggleTipo}
+                    disabled={tiposMutation.isPending}
+                  />
                 </div>
               </div>
             )}
@@ -411,36 +401,6 @@ export default function AcompanhamentoDetalhe() {
             <Button variant="outline" onClick={() => setEncModalOpen(false)}>Cancelar</Button>
             <Button className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground" onClick={handleCriarEncaminhamento} disabled={encaminhamentoMutation.isPending}>
               {encaminhamentoMutation.isPending ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={tiposModalOpen} onOpenChange={setTiposModalOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Tipos de Acompanhamento</DialogTitle>
-          </DialogHeader>
-          {catalogoTipos.length > 0 ? (
-            <CheckboxOptionList
-              idPrefix="tipo-acomp"
-              options={catalogoTipos.map((t) => ({ v: String(t.id), l: t.nome }))}
-              value={tiposSelecionados}
-              onValueChange={setTiposSelecionados}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Nenhum tipo cadastrado — cadastre em Cadastros &gt; Tipos de Acompanhamento.
-            </p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTiposModalOpen(false)}>Cancelar</Button>
-            <Button
-              className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground"
-              onClick={handleSalvarTipos}
-              disabled={tiposMutation.isPending}
-            >
-              {tiposMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
