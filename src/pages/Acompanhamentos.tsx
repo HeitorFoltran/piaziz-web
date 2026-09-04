@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQuery } from "@tanstack/react-query";
 import { getAcompanhamentos, getServicos } from "@/lib/api";
 import { formatDate } from "@/lib/format";
+import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 
 const statusOptions = [
   { value: "all", label: "Todos os status" },
-  { value: "ATIVO", label: "Ativo" },
-  { value: "INATIVO", label: "Inativo" },
+  { value: "ATIVO", label: STATUS_LABEL.ATIVO },
+  { value: "PAUSADO", label: STATUS_LABEL.PAUSADO },
+  { value: "ENCERRADO", label: STATUS_LABEL.ENCERRADO },
 ];
 
 export default function Acompanhamentos() {
@@ -105,7 +107,8 @@ export default function Acompanhamentos() {
           )}
 
           {!isLoading && !isError && items.map((item) => {
-            const isAtivo = item.status !== "INATIVO";
+            const status = item.status as StatusFicha;
+            const isAtivo = status === "ATIVO";
             return (
               <Link key={item.id} to={`/acompanhamentos/${item.id}`}>
                 <Card className={`hover:border-aziz-blue/40 transition-colors cursor-pointer ${!isAtivo ? "opacity-60" : ""}`}>
@@ -119,12 +122,8 @@ export default function Acompanhamentos() {
                         <Badge className="bg-aziz-blue/10 text-aziz-blue border-aziz-blue/20">
                           {item.encaminhamento ?? "—"}
                         </Badge>
-                        <Badge
-                          className={isAtivo
-                            ? "bg-aziz-green/10 text-aziz-green border-aziz-green/20"
-                            : "bg-muted text-muted-foreground border-border"}
-                        >
-                          {isAtivo ? "Ativo" : "Inativo"}
+                        <Badge className={STATUS_BADGE_CLASS[status]}>
+                          {STATUS_LABEL[status]}
                         </Badge>
                         <span className="text-xs text-muted-foreground hidden md:block">
                           Atualizado: {formatDate(item.dataAtualizacao)}
