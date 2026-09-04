@@ -78,6 +78,7 @@ export interface Acompanhamento {
   status: string;
   dataAtualizacao: string;
   dataCriacao: string;
+  tiposAcompanhamento: TipoAcompanhamento[];
 }
 
 export interface Encaminhamento {
@@ -143,6 +144,7 @@ export interface Ficha {
   avaliacaoSocioeconomica: AvaliacaoSocioeconomica | null;
   historicoAtendimento: HistoricoAtendimento | null;
   acolhimentoEquipe: AcolhimentoEquipe | null;
+  tiposAcompanhamento: TipoAcompanhamento[];
 }
 
 export interface FichaRequest {

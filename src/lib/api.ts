@@ -132,6 +132,16 @@ export function atualizarStatusFicha(
   return request<Ficha>(`/api/fichas/${id}/status?status=${status}`, { method: "PATCH" });
 }
 
+export function atribuirTiposAcompanhamento(
+  fichaId: number | string,
+  tipoIds: number[],
+): Promise<Ficha> {
+  return request<Ficha>(`/api/fichas/${fichaId}/tipos-acompanhamento`, {
+    method: "PUT",
+    body: JSON.stringify({ tipoIds }),
+  });
+}
+
 export function getEncaminhamentos(fichaId: number | string): Promise<Encaminhamento[]> {
   return request<Encaminhamento[]>(`/api/fichas/${fichaId}/encaminhamentos`);
 }
