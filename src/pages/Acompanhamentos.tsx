@@ -5,6 +5,7 @@ import { Search, Filter, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TiposAcompanhamentoTags } from "@/components/ficha/TiposAcompanhamentoTags";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
@@ -119,17 +120,7 @@ export default function Acompanhamentos() {
                         <span className="font-mono text-xs text-muted-foreground">{item.codigoFicha}</span>
                         <span className="font-medium text-foreground col-span-2 md:col-span-1">{item.nome}</span>
                         <span className="text-muted-foreground hidden md:block">{item.cpf}</span>
-                        <div className="flex flex-wrap gap-1">
-                          {(item.tiposAcompanhamento ?? []).length > 0 ? (
-                            item.tiposAcompanhamento.map((t) => (
-                              <Badge key={t.id} className="bg-aziz-blue/10 text-aziz-blue border-aziz-blue/20">
-                                {t.nome}
-                              </Badge>
-                            ))
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </div>
+                        <TiposAcompanhamentoTags tipos={item.tiposAcompanhamento ?? []} />
                         <Badge className={STATUS_BADGE_CLASS[status]}>
                           {STATUS_LABEL[status]}
                         </Badge>
