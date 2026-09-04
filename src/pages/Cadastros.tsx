@@ -12,12 +12,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFichas, getServicos, getProfissionais, createServico, atualizarServico } from "@/lib/api";
-import type { Servico, ServicoRequest } from "@/types/api";
+import {
+  getFichas,
+  getServicos,
+  getProfissionais,
+  createServico,
+  atualizarServico,
+  getTiposAcompanhamento,
+  createTipoAcompanhamento,
+  atualizarTipoAcompanhamento,
+} from "@/lib/api";
+import type { Servico, ServicoRequest, TipoAcompanhamento, TipoAcompanhamentoRequest } from "@/types/api";
 
 const tabs = [
   { id: "fichas", label: "Ficha Pessoal (PIA)" },
   { id: "servicos", label: "Serviços" },
+  { id: "tipos-acompanhamento", label: "Tipos de Acompanhamento" },
   { id: "profissionais", label: "Profissionais" },
 ];
 
@@ -46,6 +56,7 @@ function ErrorCard({ message }: { message?: string }) {
 }
 
 const emptyServico: ServicoRequest = { nome: "" };
+const emptyTipoAcompanhamento: TipoAcompanhamentoRequest = { nome: "" };
 
 export default function Cadastros() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -62,6 +73,10 @@ export default function Cadastros() {
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
   const [servicoForm, setServicoForm] = useState<ServicoRequest>(emptyServico);
 
+  const [tipoModalOpen, setTipoModalOpen] = useState(false);
+  const [tipoEditando, setTipoEditando] = useState<TipoAcompanhamento | null>(null);
+  const [tipoForm, setTipoForm] = useState<TipoAcompanhamentoRequest>(emptyTipoAcompanhamento);
+
   useEffect(() => {
     if (action === "nova") setShareOpen(true);
   }, [action]);
@@ -76,6 +91,12 @@ export default function Cadastros() {
     queryKey: ["servicos"],
     queryFn: getServicos,
     enabled: activeTab === "servicos",
+  });
+
+  const tiposAcompanhamentoQuery = useQuery({
+    queryKey: ["tipos-acompanhamento"],
+    queryFn: getTiposAcompanhamento,
+    enabled: activeTab === "tipos-acompanhamento",
   });
 
   const profissionaisQuery = useQuery({
@@ -151,6 +172,62 @@ export default function Cadastros() {
   };
 
   const isPendingServico = criarServicoMutation.isPending || editarServicoMutation.isPending;
+
+  const criarTipoMutation = useMutation({
+    mutationFn: (body: TipoAcompanhamentoRequest) => createTipoAcompanhamento(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tipos-acompanhamento"] });
+      fecharModalTipo();
+      toast.success("Tipo de acompanhamento cadastrado com sucesso!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const editarTipoMutation = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: TipoAcompanhamentoRequest }) =>
+      atualizarTipoAcompanhamento(id, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tipos-acompanhamento"] });
+      fecharModalTipo();
+      toast.success("Tipo de acompanhamento atualizado com sucesso!");
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const abrirModalTipoNovo = () => {
+    setTipoEditando(null);
+    setTipoForm(emptyTipoAcompanhamento);
+    setTipoModalOpen(true);
+  };
+
+  const abrirModalTipoEditar = (t: TipoAcompanhamento, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTipoEditando(t);
+    setTipoForm({ nome: t.nome });
+    setTipoModalOpen(true);
+  };
+
+  const fecharModalTipo = () => {
+    setTipoModalOpen(false);
+    setTipoEditando(null);
+    setTipoForm(emptyTipoAcompanhamento);
+  };
+
+  const handleSalvarTipo = () => {
+    if (!tipoForm.nome.trim()) {
+      toast.error("O nome do tipo de acompanhamento é obrigatório.");
+      return;
+    }
+    const body: TipoAcompanhamentoRequest = { nome: tipoForm.nome.trim() };
+    if (tipoEditando) {
+      editarTipoMutation.mutate({ id: tipoEditando.id, body });
+    } else {
+      criarTipoMutation.mutate(body);
+    }
+  };
+
+  const isPendingTipo = criarTipoMutation.isPending || editarTipoMutation.isPending;
 
   const setTab = (tab: string) => {
     setSearchParams({ tab });
@@ -261,6 +338,43 @@ export default function Cadastros() {
           </div>
         )}
 
+        {activeTab === "tipos-acompanhamento" && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Tipos de acompanhamento</h2>
+              <Button onClick={abrirModalTipoNovo} className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground">
+                <Plus className="w-4 h-4 mr-2" /> Adicionar tipo
+              </Button>
+            </div>
+
+            {tiposAcompanhamentoQuery.isLoading && <ListSkeleton rows={4} />}
+            {tiposAcompanhamentoQuery.isError && <ErrorCard message={(tiposAcompanhamentoQuery.error as Error)?.message} />}
+            {!tiposAcompanhamentoQuery.isLoading && !tiposAcompanhamentoQuery.isError && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {(tiposAcompanhamentoQuery.data ?? []).map((t) => (
+                  <Card key={t.id} className="hover:border-aziz-blue/30 transition-colors group relative">
+                    <CardContent className="p-6 flex flex-col items-center text-center">
+                      <span className="text-sm font-medium text-foreground">{t.nome}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
+                        onClick={(e) => abrirModalTipoEditar(t, e)}
+                        title="Editar tipo de acompanhamento"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+                {(tiposAcompanhamentoQuery.data ?? []).length === 0 && (
+                  <p className="col-span-full text-center text-muted-foreground py-12">Nenhum tipo de acompanhamento cadastrado.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "profissionais" && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -360,6 +474,35 @@ export default function Cadastros() {
                 disabled={isPendingServico}
               >
                 {isPendingServico ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={tipoModalOpen} onOpenChange={fecharModalTipo}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{tipoEditando ? "Editar tipo de acompanhamento" : "Novo tipo de acompanhamento"}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="tipo-nome" className="mb-1.5 block">Nome *</Label>
+                <Input
+                  id="tipo-nome"
+                  placeholder="Ex: Acompanhamento psicológico"
+                  value={tipoForm.nome}
+                  onChange={(e) => setTipoForm((f) => ({ ...f, nome: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={fecharModalTipo}>Cancelar</Button>
+              <Button
+                className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground"
+                onClick={handleSalvarTipo}
+                disabled={isPendingTipo}
+              >
+                {isPendingTipo ? "Salvando..." : "Salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -312,6 +312,15 @@ export interface ServicoRequest {
   nome: string;
 }
 
+export interface TipoAcompanhamento {
+  id: number;
+  nome: string;
+}
+
+export interface TipoAcompanhamentoRequest {
+  nome: string;
+}
+
 export interface Profissional {
   id: number;
   nome: string;

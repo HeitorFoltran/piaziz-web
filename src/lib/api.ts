@@ -17,6 +17,8 @@ import type {
   ProfissionalRequest,
   Servico,
   ServicoRequest,
+  TipoAcompanhamento,
+  TipoAcompanhamentoRequest,
 } from "@/types/api";
 
 export const API_BASE_URL =
@@ -168,6 +170,24 @@ export function createServico(body: ServicoRequest): Promise<Servico> {
 
 export function atualizarServico(id: number, body: ServicoRequest): Promise<Servico> {
   return request<Servico>(`/api/servicos/${id}`, { method: "PUT", body: JSON.stringify(body) });
+}
+
+export function getTiposAcompanhamento(): Promise<TipoAcompanhamento[]> {
+  return request<TipoAcompanhamento[]>("/api/tipos-acompanhamento");
+}
+
+export function createTipoAcompanhamento(body: TipoAcompanhamentoRequest): Promise<TipoAcompanhamento> {
+  return request<TipoAcompanhamento>("/api/tipos-acompanhamento", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function atualizarTipoAcompanhamento(id: number, body: TipoAcompanhamentoRequest): Promise<TipoAcompanhamento> {
+  return request<TipoAcompanhamento>(`/api/tipos-acompanhamento/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 }
 
 export function getProfissionais(params?: {
