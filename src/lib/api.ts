@@ -85,7 +85,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let detail = "";
-    try { detail = await response.text(); } catch { }
+    try { detail = await response.text(); } catch {
+      // corpo da resposta não é texto legível — segue sem detalhe
+    }
     throw new Error(
       `Erro ${response.status} ao acessar ${path}` + (detail ? `: ${detail}` : ""),
     );
