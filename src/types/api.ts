@@ -111,7 +111,6 @@ export interface Interacao {
 }
 
 export interface InteracaoRequest {
-  autor?: string;
   texto: string;
 }
 

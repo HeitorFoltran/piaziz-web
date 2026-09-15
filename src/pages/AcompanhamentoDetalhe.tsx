@@ -72,7 +72,7 @@ export default function AcompanhamentoDetalhe() {
   });
 
   const interacaoMutation = useMutation({
-    mutationFn: (texto: string) => createInteracao(id!, { autor: "Usuário", texto }),
+    mutationFn: (texto: string) => createInteracao(id!, { texto }),
     onSuccess: () => {
       setNovoComentario("");
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
