@@ -67,6 +67,28 @@ export interface DashboardStats {
   fichasPorMes: FichaPorMes[];
 }
 
+export interface PontoSerie {
+  periodo: string;
+  total: number;
+}
+
+export interface RelatorioAnalitico {
+  totalCadastros: number;
+  totalEncaminhamentos: number;
+  percentualCadastrosEncaminhados: number;
+  taxaConversaoEncaminhamentoAtendimento: number;
+  tempoMedioCadastroAtendimentoDias: number | null;
+  mediaCadastrosPorMes: number;
+  mediaCadastrosPorSemana: number;
+  mediaCadastrosPorDia: number;
+  mediaEncaminhamentosPorMes: number;
+  mediaEncaminhamentosPorSemana: number;
+  mediaEncaminhamentosPorDia: number;
+  progressaoCadastros: PontoSerie[];
+  progressaoEncaminhamentos: PontoSerie[];
+  progressaoAtendimentos: PontoSerie[];
+}
+
 export interface Acompanhamento {
   id: number;
   numeroCaso: string;
