@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Index from "./pages/Index.tsx";
+import Relatorios from "./pages/Relatorios.tsx";
 import Acompanhamentos from "./pages/Acompanhamentos.tsx";
 import AcompanhamentoDetalhe from "./pages/AcompanhamentoDetalhe.tsx";
 import Cadastros from "./pages/Cadastros.tsx";
@@ -31,6 +32,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
+            <Route path="/relatorios" element={<RequireAuth><Relatorios /></RequireAuth>} />
             <Route path="/acompanhamentos" element={<RequireAuth><Acompanhamentos /></RequireAuth>} />
             <Route path="/acompanhamentos/:id" element={<RequireAuth><AcompanhamentoDetalhe /></RequireAuth>} />
             <Route path="/acompanhamentos/:id/editar" element={<RequireAuth><EditarFicha /></RequireAuth>} />

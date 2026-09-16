@@ -6,6 +6,7 @@ const navItems = [
   { label: "Home", path: "/" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
   { label: "Cadastros", path: "/cadastros" },
+  { label: "Relatórios", path: "/relatorios" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

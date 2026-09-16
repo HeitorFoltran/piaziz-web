@@ -15,6 +15,7 @@ import type {
   InteracaoRequest,
   Profissional,
   ProfissionalRequest,
+  RelatorioAnalitico,
   Servico,
   ServicoRequest,
   TipoAcompanhamento,
@@ -102,6 +103,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export function getDashboardStats(): Promise<DashboardStats> {
   return request<DashboardStats>("/api/dashboard/stats");
+}
+
+export function getRelatorios(granularidade: "dia" | "semana" | "mes"): Promise<RelatorioAnalitico> {
+  return request<RelatorioAnalitico>(`/api/dashboard/relatorios?granularidade=${granularidade}`);
 }
 
 export function getAcompanhamentos(params?: {
