@@ -4,9 +4,9 @@ import { UserMenu } from "@/components/UserMenu";
 
 const navItems = [
   { label: "Home", path: "/" },
+  { label: "Relatórios", path: "/relatorios" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
   { label: "Cadastros", path: "/cadastros" },
-  { label: "Relatórios", path: "/relatorios" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
