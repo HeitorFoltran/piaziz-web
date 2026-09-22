@@ -1,7 +1,8 @@
 import Layout from "@/components/Layout";
+import { GerarConviteLink } from "@/components/GerarConviteLink";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Search, Plus, Filter, Share2, Copy, Pencil } from "lucide-react";
+import { Search, Plus, Filter, Share2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,6 @@ export default function Cadastros() {
   const [search, setSearch] = useState("");
   const [profServico, setProfServico] = useState("all");
   const [shareOpen, setShareOpen] = useState(false);
-  const shareLink = `${window.location.origin}/ficha-publica/nova`;
 
   const [servicoModalOpen, setServicoModalOpen] = useState(false);
   const [servicoEditando, setServicoEditando] = useState<Servico | null>(null);
@@ -435,16 +435,11 @@ export default function Cadastros() {
                 <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
                   <Share2 className="w-4 h-4" /> Compartilhar link para preenchimento
                 </p>
-                <div className="flex gap-2">
-                  <Input value={shareLink} readOnly className="text-xs" />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => { navigator.clipboard.writeText(shareLink); toast.success("Link copiado!"); }}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Gera um link de uso único para a própria pessoa preencher os dados iniciais. O envio
+                  cai na fila de fichas pendentes para revisão.
+                </p>
+                <GerarConviteLink />
               </div>
             </div>
           </DialogContent>
