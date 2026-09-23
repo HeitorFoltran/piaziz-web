@@ -181,13 +181,17 @@ export const emptyHistoricoForm: HistoricoFormState = {
   reacaoAgressor: "",
 };
 
+// Aceita tanto a resposta (campos `| null`) quanto o request (campos opcionais) — a
+// revisão de fichas pendentes preenche o formulário a partir dos DTOs de request.
+type Nullable<T> = { [K in keyof T]?: T[K] | null };
+
 const toBool = (v: string): boolean | undefined => (v === "sim" ? true : v === "nao" ? false : undefined);
 const fromBool = (v: boolean | null | undefined): string => (v === true ? "sim" : v === false ? "nao" : "");
 const toNum = (v: string): number | undefined => (v === "" ? undefined : Number(v));
 const fromNum = (v: number | null | undefined): string => (v == null ? "" : String(v));
 const fromStr = (v: string | null | undefined): string => v ?? "";
 
-export function fichaToFormState(f: Ficha): FichaFormState {
+export function fichaToFormState(f: Ficha | Nullable<FichaRequest>): FichaFormState {
   return {
     nome: f.nome ?? "",
     cpf: f.cpf ?? "",
@@ -234,7 +238,9 @@ export function fichaFormToRequest(form: FichaFormState, status: string): FichaR
   };
 }
 
-export function avaliacaoToFormState(a: AvaliacaoSocioeconomica | null | undefined): AvaliacaoFormState {
+export function avaliacaoToFormState(
+  a: AvaliacaoSocioeconomica | Nullable<AvaliacaoSocioeconomicaRequest> | null | undefined,
+): AvaliacaoFormState {
   if (!a) return emptyAvaliacaoForm;
   return {
     temRenda: fromBool(a.temRenda),
@@ -350,7 +356,9 @@ export function acolhimentoFormToRequest(form: AcolhimentoFormState): Acolhiment
   };
 }
 
-export function historicoToFormState(h: HistoricoAtendimento | null | undefined): HistoricoFormState {
+export function historicoToFormState(
+  h: HistoricoAtendimento | Nullable<HistoricoAtendimentoRequest> | null | undefined,
+): HistoricoFormState {
   if (!h) return emptyHistoricoForm;
   return {
     jaProcurouServico: fromBool(h.jaProcurouServico),

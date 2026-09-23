@@ -337,3 +337,48 @@ export interface ProfissionalRequest {
   carteiraProfissional?: string;
   servicoId?: number | null;
 }
+export type StatusConvite = "ATIVO" | "USADO" | "EXPIRADO" | "CANCELADO";
+
+export interface ConviteFicha {
+  id: number;
+  /** Só vem preenchido na resposta de criação — o token cru não é recuperável depois. */
+  linkCompleto: string | null;
+  dataCriacao: string;
+  dataExpiracao: string;
+  status: StatusConvite;
+  usadoEm: string | null;
+}
+
+export interface FichaPublicaStatus {
+  valido: boolean;
+  motivo: "expirado" | "invalido" | "usado" | null;
+}
+
+// Formulário público = Parte A do PIA: Ficha (numeroCaso/status são ignorados pelo
+// backend) + avaliação socioeconômica + histórico de atendimento.
+export interface FichaPublicaRequest {
+  ficha: FichaRequest;
+  avaliacao?: AvaliacaoSocioeconomicaRequest;
+  historico?: HistoricoAtendimentoRequest;
+  situacaoRelatada?: string;
+}
+
+export type StatusFichaPendente = "PENDENTE" | "APROVADA" | "REJEITADA";
+
+export interface FichaPendente {
+  id: number;
+  nome: string;
+  cpf: string;
+  telefone: string | null;
+  idade: number | null;
+  situacaoRelatada: string | null;
+  dataSubmissao: string;
+  status: StatusFichaPendente;
+  revisadoPorId: number | null;
+  dataRevisao: string | null;
+  motivoRejeicao: string | null;
+  fichaId: number | null;
+  ficha: FichaRequest;
+  avaliacao: AvaliacaoSocioeconomicaRequest | null;
+  historico: HistoricoAtendimentoRequest | null;
+}
