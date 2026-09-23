@@ -4,10 +4,14 @@ import type {
   AcolhimentoEquipeRequest,
   AvaliacaoSocioeconomica,
   AvaliacaoSocioeconomicaRequest,
+  ConviteFicha,
   DashboardStats,
   Encaminhamento,
   EncaminhamentoRequest,
   Ficha,
+  FichaPendente,
+  FichaPublicaRequest,
+  FichaPublicaStatus,
   FichaRequest,
   HistoricoAtendimento,
   HistoricoAtendimentoRequest,
@@ -18,6 +22,7 @@ import type {
   RelatorioAnalitico,
   Servico,
   ServicoRequest,
+  StatusFichaPendente,
   TipoAcompanhamento,
   TipoAcompanhamentoRequest,
 } from "@/types/api";
@@ -269,6 +274,68 @@ export function salvarHistoricoAtendimento(
 ): Promise<HistoricoAtendimento> {
   return request<HistoricoAtendimento>(`/api/fichas/${fichaId}/historico-atendimento`, {
     method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function criarConviteFicha(): Promise<ConviteFicha> {
+  return request<ConviteFicha>("/api/convites-ficha", { method: "POST" });
+}
+
+export function listarConvitesFicha(): Promise<ConviteFicha[]> {
+  return request<ConviteFicha[]>("/api/convites-ficha");
+}
+
+export function cancelarConviteFicha(id: number): Promise<ConviteFicha> {
+  return request<ConviteFicha>(`/api/convites-ficha/${id}/cancelar`, { method: "POST" });
+}
+
+export function listarFichasPendentes(status?: StatusFichaPendente): Promise<FichaPendente[]> {
+  return request<FichaPendente[]>(`/api/fichas-pendentes${buildQuery({ status })}`);
+}
+
+export function aprovarFichaPendente(id: number): Promise<FichaPendente> {
+  return request<FichaPendente>(`/api/fichas-pendentes/${id}/aprovar`, { method: "POST" });
+}
+
+export function rejeitarFichaPendente(id: number, motivo?: string): Promise<FichaPendente> {
+  return request<FichaPendente>(`/api/fichas-pendentes/${id}/rejeitar`, {
+    method: "POST",
+    body: JSON.stringify({ motivo: motivo || null }),
+  });
+}
+
+// Rotas públicas do link de intake. Não passam pelo request(): o visitante não tem
+// conta, e se houver um token de profissional em memória na mesma aba ele não pode
+// ir junto. O erro é sempre genérico — nem o token nem o corpo da resposta vão pra
+// mensagem, que é exibida pra quem está do outro lado do link.
+async function publicRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers: { "Content-Type": "application/json" },
+      credentials: "omit",
+    });
+  } catch {
+    throw new Error("Não foi possível conectar. Tente novamente em alguns instantes.");
+  }
+  if (!response.ok) {
+    throw new Error("Não foi possível concluir. Tente novamente mais tarde.");
+  }
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
+export function getFichaPublicaStatus(token: string): Promise<FichaPublicaStatus> {
+  return publicRequest<FichaPublicaStatus>(
+    `/api/ficha-publica/${encodeURIComponent(token)}/status`,
+  );
+}
+
+export function submitFichaPublica(token: string, body: FichaPublicaRequest): Promise<void> {
+  return publicRequest<void>(`/api/ficha-publica/${encodeURIComponent(token)}`, {
+    method: "POST",
     body: JSON.stringify(body),
   });
 }

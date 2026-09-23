@@ -1,16 +1,24 @@
 import { Link, useLocation } from "react-router-dom";
 import { User } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
+import { useAuth } from "@/contexts/AuthContext";
 
-const navItems = [
+const navItemsEquipe = [
   { label: "Home", path: "/" },
   { label: "Relatórios", path: "/relatorios" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
   { label: "Cadastros", path: "/cadastros" },
+  { label: "Fichas pendentes", path: "/fichas-pendentes" },
+  { label: "Links de preenchimento", path: "/convites" },
 ];
+
+// ESTAGIARIO não revisa fichas nem vê casos — o nav dele só linka a tela de links de preenchimento.
+const navItemsEstagiario = [{ label: "Links de preenchimento", path: "/convites" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const { auth } = useAuth();
+  const navItems = auth?.role === "ESTAGIARIO" ? navItemsEstagiario : navItemsEquipe;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">

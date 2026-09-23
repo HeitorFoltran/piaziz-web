@@ -12,15 +12,18 @@ import Cadastros from "./pages/Cadastros.tsx";
 import NovaFicha from "./pages/NovaFicha.tsx";
 import EditarFicha from "./pages/EditarFicha.tsx";
 import Login from "./pages/Login.tsx";
-import EmBreve from "./pages/EmBreve.tsx";
+import Convites from "./pages/Convites.tsx";
+import FichasPendentes from "./pages/FichasPendentes.tsx";
+import FichaPublica from "./pages/FichaPublica.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-function RequireAuth({ children }: { children: ReactNode }) {
+// ESTAGIARIO só tem a tela de links de preenchimento (/convites) — qualquer outra rota autenticada devolve pra ela.
+function RequireAuth({ children, permiteEstagiario = false }: { children: ReactNode; permiteEstagiario?: boolean }) {
   const { auth } = useAuth();
   if (!auth) return <Navigate to="/login" replace />;
-  if (auth.role === "ESTAGIARIO") return <Navigate to="/em-breve" replace />;
+  if (auth.role === "ESTAGIARIO" && !permiteEstagiario) return <Navigate to="/convites" replace />;
   return <>{children}</>;
 }
 
@@ -38,8 +41,10 @@ const App = () => (
             <Route path="/acompanhamentos/:id/editar" element={<RequireAuth><EditarFicha /></RequireAuth>} />
             <Route path="/cadastros" element={<RequireAuth><Cadastros /></RequireAuth>} />
             <Route path="/cadastros/nova-ficha" element={<RequireAuth><NovaFicha /></RequireAuth>} />
+            <Route path="/convites" element={<RequireAuth permiteEstagiario><Convites /></RequireAuth>} />
+            <Route path="/fichas-pendentes" element={<RequireAuth><FichasPendentes /></RequireAuth>} />
             <Route path="/login" element={<Login />} />
-            <Route path="/em-breve" element={<EmBreve />} />
+            <Route path="/ficha-publica/:token" element={<FichaPublica />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
