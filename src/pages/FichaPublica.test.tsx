@@ -35,8 +35,8 @@ describe("FichaPublica", () => {
   it("não envia com CPF inválido", async () => {
     vi.mocked(getFichaPublicaStatus).mockResolvedValue({ valido: true, motivo: null });
     renderPagina();
-    fireEvent.change(await screen.findByLabelText("Nome *"), { target: { value: "Maria" } });
-    fireEvent.change(screen.getByLabelText("CPF *"), { target: { value: "11111111111" } });
+    fireEvent.change(await screen.findByLabelText("Nome"), { target: { value: "Maria" } });
+    fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "11111111111" } });
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/cpf/i);
     expect(submitFichaPublica).not.toHaveBeenCalled();
@@ -46,20 +46,21 @@ describe("FichaPublica", () => {
     vi.mocked(getFichaPublicaStatus).mockResolvedValue({ valido: true, motivo: null });
     vi.mocked(submitFichaPublica).mockResolvedValue(undefined);
     renderPagina();
-    fireEvent.change(await screen.findByLabelText("Nome *"), { target: { value: "Maria" } });
-    fireEvent.change(screen.getByLabelText("CPF *"), { target: { value: "52998224725" } });
+    fireEvent.change(await screen.findByLabelText("Nome"), { target: { value: "Maria" } });
+    fireEvent.change(screen.getByLabelText("CPF"), { target: { value: "52998224725" } });
     fireEvent.change(screen.getByLabelText("Idade"), { target: { value: "34" } });
     fireEvent.click(screen.getByRole("button", { name: "Enviar" }));
 
     expect(await screen.findByText(/recebemos suas informações/i)).toBeInTheDocument();
-    await waitFor(() =>
-      expect(submitFichaPublica).toHaveBeenCalledWith("tok123", {
-        nome: "Maria",
-        cpf: "529.982.247-25",
-        telefone: undefined,
-        idade: 34,
-        situacaoRelatada: undefined,
-      }),
-    );
+    await waitFor(() => expect(submitFichaPublica).toHaveBeenCalledTimes(1));
+    const [token, body] = vi.mocked(submitFichaPublica).mock.calls[0];
+    expect(token).toBe("tok123");
+    expect(body.ficha).toMatchObject({ nome: "Maria", cpf: "529.982.247-25", idade: 34 });
+    expect(body.ficha.status).toBeUndefined();
+    expect(body.ficha.numeroCaso).toBeUndefined();
+    // sem resposta, o nível de segurança não pode ir como 0 ("não me sinto segura")
+    expect(body.ficha.nivelSeguranca).toBeUndefined();
+    expect(body.avaliacao).toBeDefined();
+    expect(body.historico).toBeDefined();
   });
 });

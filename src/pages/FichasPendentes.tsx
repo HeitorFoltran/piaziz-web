@@ -13,6 +13,8 @@ import { aprovarFichaPendente, listarFichasPendentes, rejeitarFichaPendente } fr
 import { formatDate } from "@/lib/format";
 import { FICHA_PENDENTE_STATUS_LABEL } from "@/lib/status";
 import { cn } from "@/lib/utils";
+import { FichaFormParteA } from "@/components/ficha/FichaFormParteA";
+import { avaliacaoToFormState, fichaToFormState, historicoToFormState } from "@/components/ficha/ficha-form-state";
 import type { FichaPendente, StatusFichaPendente } from "@/types/api";
 
 const filtros: StatusFichaPendente[] = ["PENDENTE", "APROVADA", "REJEITADA"];
@@ -21,6 +23,7 @@ export default function FichasPendentes() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [filtro, setFiltro] = useState<StatusFichaPendente>("PENDENTE");
+  const [revisando, setRevisando] = useState<FichaPendente | null>(null);
   const [rejeitando, setRejeitando] = useState<FichaPendente | null>(null);
   const [motivo, setMotivo] = useState("");
 
@@ -32,6 +35,7 @@ export default function FichasPendentes() {
   const aprovar = useMutation({
     mutationFn: aprovarFichaPendente,
     onSuccess: (revisada) => {
+      setRevisando(null);
       queryClient.invalidateQueries({ queryKey: ["fichas-pendentes"] });
       queryClient.invalidateQueries({ queryKey: ["fichas"] });
       toast.success("Ficha aprovada. Complete o restante do PIA.");
@@ -56,7 +60,12 @@ export default function FichasPendentes() {
   }
 
   const fichas = pendentesQuery.data ?? [];
-  const revisando = aprovar.isPending || rejeitar.isPending;
+  const ocupado = aprovar.isPending || rejeitar.isPending;
+
+  function abrirRejeicao(f: FichaPendente) {
+    setRevisando(null);
+    setRejeitando(f);
+  }
 
   return (
     <Layout>
@@ -64,8 +73,7 @@ export default function FichasPendentes() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Fichas pendentes</h1>
           <p className="text-sm text-muted-foreground">
-            Envios recebidos pelo link de convite. Aprovar cria a ficha de acompanhamento; o restante do
-            PIA é completado depois.
+            Envios recebidos pelo link de preenchimento.
           </p>
         </div>
 
@@ -115,28 +123,20 @@ export default function FichasPendentes() {
                     <p className="text-xs text-muted-foreground">Enviada em {formatDate(f.dataSubmissao)}</p>
                   </div>
 
-                  {f.status === "PENDENTE" && (
-                    <div className="flex gap-2 shrink-0">
-                      <Button variant="outline" size="sm" disabled={revisando} onClick={() => setRejeitando(f)}>
-                        Rejeitar
-                      </Button>
-                      <Button size="sm" disabled={revisando} onClick={() => aprovar.mutate(f.id)}>
-                        Aprovar
-                      </Button>
-                    </div>
-                  )}
-                  {f.status === "APROVADA" && f.fichaId && (
-                    <Link
-                      to={`/acompanhamentos/${f.fichaId}`}
-                      className="text-sm font-medium text-primary hover:underline shrink-0"
-                    >
-                      Ver acompanhamento
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Button size="sm" variant={f.status === "PENDENTE" ? "default" : "outline"} onClick={() => setRevisando(f)}>
+                      {f.status === "PENDENTE" ? "Revisar" : "Ver envio"}
+                    </Button>
+                    {f.status === "APROVADA" && f.fichaId && (
+                      <Link to={`/acompanhamentos/${f.fichaId}`} className="text-sm font-medium text-primary hover:underline">
+                        Ver acompanhamento
+                      </Link>
+                    )}
+                  </div>
                 </div>
 
                 {f.situacaoRelatada && (
-                  <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-sm text-foreground">
+                  <p className="line-clamp-3 whitespace-pre-wrap rounded-md bg-muted p-3 text-sm text-foreground">
                     {f.situacaoRelatada}
                   </p>
                 )}
@@ -150,6 +150,46 @@ export default function FichasPendentes() {
             </Card>
           ))}
         </div>
+
+        <Dialog open={revisando !== null} onOpenChange={(open) => !open && setRevisando(null)}>
+          <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Envio de {revisando?.nome}</DialogTitle>
+            </DialogHeader>
+            {revisando && (
+              <div className="space-y-4">
+                <FichaFormParteA
+                  readOnly
+                  ficha={{
+                    ...fichaToFormState(revisando.ficha ?? {}),
+                    // fichaToFormState assume "0" quando vem vazio; aqui isso pareceria resposta dela.
+                    nivelSeguranca: revisando.ficha?.nivelSeguranca != null ? String(revisando.ficha.nivelSeguranca) : "",
+                  }}
+                  avaliacao={avaliacaoToFormState(revisando.avaliacao)}
+                  historico={historicoToFormState(revisando.historico)}
+                />
+                {revisando.situacaoRelatada && (
+                  <div>
+                    <p className="mb-1 text-sm font-semibold text-foreground">Relato com as próprias palavras</p>
+                    <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-sm text-foreground">
+                      {revisando.situacaoRelatada}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {revisando?.status === "PENDENTE" && (
+              <DialogFooter>
+                <Button variant="outline" disabled={ocupado} onClick={() => abrirRejeicao(revisando)}>
+                  Rejeitar
+                </Button>
+                <Button disabled={ocupado} onClick={() => aprovar.mutate(revisando.id)}>
+                  {aprovar.isPending ? "Aprovando..." : "Aprovar e criar ficha"}
+                </Button>
+              </DialogFooter>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={rejeitando !== null} onOpenChange={(open) => !open && fecharRejeicao()}>
           <DialogContent className="sm:max-w-md">

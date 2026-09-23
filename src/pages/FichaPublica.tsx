@@ -1,16 +1,29 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
+import { FichaFormParteA } from "@/components/ficha/FichaFormParteA";
+import {
+  type AvaliacaoFormState,
+  type FichaFormState,
+  type HistoricoFormState,
+  avaliacaoFormToRequest,
+  emptyAvaliacaoForm,
+  emptyFichaForm,
+  emptyHistoricoForm,
+  fichaFormToRequest,
+  historicoFormToRequest,
+} from "@/components/ficha/ficha-form-state";
 import { getFichaPublicaStatus, submitFichaPublica } from "@/lib/api";
 import { formatarCpfDigitado, isCpfValido } from "@/lib/cpf";
+import { cn } from "@/lib/utils";
 import type { FichaPublicaStatus } from "@/types/api";
 
-// Página aberta por quem recebeu o convite, sem conta no sistema. Não usa Layout
+// Página aberta por quem recebeu o link de preenchimento, sem conta no sistema. Não usa Layout
 // (nav/menu do app autenticado) nem toast — tudo que aparece aqui é só desta página.
 
 const MENSAGEM_LINK_INVALIDO: Record<NonNullable<FichaPublicaStatus["motivo"]>, string> = {
@@ -19,25 +32,32 @@ const MENSAGEM_LINK_INVALIDO: Record<NonNullable<FichaPublicaStatus["motivo"]>, 
   invalido: "Este link não é válido. Confira se ele foi copiado por inteiro.",
 };
 
-function Moldura({ children }: { children: ReactNode }) {
+// `largo` é pro formulário, que já vem dentro do próprio Card da Parte A.
+function Moldura({ children, largo = false }: { children: ReactNode; largo?: boolean }) {
   return (
     <div className="min-h-screen bg-muted px-4 py-10">
-      <div className="mx-auto max-w-lg">
+      <div className={cn("mx-auto", largo ? "max-w-3xl" : "max-w-lg")}>
         <div className="mb-6 flex items-center justify-center gap-1">
           <span className="font-logo text-2xl font-black tracking-tight text-primary">AZIZ</span>
           <span className="text-xs font-medium text-muted-foreground">defensoria</span>
         </div>
-        <div className="rounded-lg border border-border bg-card p-6 shadow-sm">{children}</div>
+        {largo ? children : <div className="rounded-lg border border-border bg-card p-6 shadow-sm">{children}</div>}
       </div>
     </div>
   );
 }
 
-const formVazio = { nome: "", cpf: "", telefone: "", idade: "", situacaoRelatada: "" };
+// Nível de segurança sem valor inicial aqui (no formulário interno o default é "0"):
+// quem preenche sozinha não pode ter "não me sinto segura de forma alguma" marcado
+// por ela sem ter respondido.
+const fichaVazia: FichaFormState = { ...emptyFichaForm, nivelSeguranca: "" };
 
 export default function FichaPublica() {
   const { token = "" } = useParams();
-  const [form, setForm] = useState(formVazio);
+  const [ficha, setFicha] = useState<FichaFormState>(fichaVazia);
+  const [avaliacao, setAvaliacao] = useState<AvaliacaoFormState>(emptyAvaliacaoForm);
+  const [historico, setHistorico] = useState<HistoricoFormState>(emptyHistoricoForm);
+  const [situacaoRelatada, setSituacaoRelatada] = useState("");
   const [erroValidacao, setErroValidacao] = useState<string | null>(null);
 
   const statusQuery = useQuery({
@@ -48,24 +68,29 @@ export default function FichaPublica() {
   });
 
   const envio = useMutation({
-    mutationFn: () =>
-      submitFichaPublica(token, {
-        nome: form.nome.trim(),
-        cpf: form.cpf,
-        telefone: form.telefone.trim() || undefined,
-        idade: form.idade ? Number(form.idade) : undefined,
-        situacaoRelatada: form.situacaoRelatada.trim() || undefined,
-      }),
+    mutationFn: () => {
+      return submitFichaPublica(token, {
+        // numeroCaso/status são da equipe — ficam fora do payload (o backend zera de qualquer jeito).
+        ficha: { ...fichaFormToRequest(ficha, ""), numeroCaso: undefined, status: undefined },
+        avaliacao: avaliacaoFormToRequest(avaliacao),
+        historico: historicoFormToRequest(historico),
+        situacaoRelatada: situacaoRelatada.trim() || undefined,
+      });
+    },
   });
 
-  const set = (campo: keyof typeof formVazio) => (valor: string) =>
-    setForm((f) => ({ ...f, [campo]: valor }));
+  const setF = <K extends keyof FichaFormState>(key: K, value: FichaFormState[K]) =>
+    setFicha((f) => ({ ...f, [key]: key === "cpf" ? formatarCpfDigitado(value as string) : value }));
+  const setA = <K extends keyof AvaliacaoFormState>(key: K, value: AvaliacaoFormState[K]) =>
+    setAvaliacao((f) => ({ ...f, [key]: value }));
+  const setH = <K extends keyof HistoricoFormState>(key: K, value: HistoricoFormState[K]) =>
+    setHistorico((f) => ({ ...f, [key]: value }));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!form.nome.trim()) return setErroValidacao("Informe seu nome.");
-    if (!isCpfValido(form.cpf)) return setErroValidacao("Confira o CPF informado.");
-    const idade = form.idade ? Number(form.idade) : null;
+    if (!ficha.nome.trim()) return setErroValidacao("Informe seu nome.");
+    if (!isCpfValido(ficha.cpf)) return setErroValidacao("Confira o CPF informado.");
+    const idade = ficha.idade ? Number(ficha.idade) : null;
     if (idade !== null && (!Number.isInteger(idade) || idade < 0 || idade > 120)) {
       return setErroValidacao("Confira a idade informada.");
     }
@@ -116,60 +141,30 @@ export default function FichaPublica() {
   }
 
   return (
-    <Moldura>
-      <h1 className="mb-1 text-lg font-semibold text-foreground">Solicitar atendimento</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        Preencha os dados abaixo. Só a equipe de atendimento terá acesso a essas informações.
+    <Moldura largo>
+      <h1 className="mb-1 text-center text-xl font-semibold text-foreground">Solicitar atendimento</h1>
+      <p className="mb-6 text-center text-sm text-muted-foreground">
+        Só nome e CPF são obrigatórios — responda o que se sentir à vontade. Só a equipe de
+        atendimento terá acesso a essas informações.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-        <div>
-          <Label htmlFor="nome">Nome *</Label>
-          <Input id="nome" maxLength={150} value={form.nome} onChange={(e) => set("nome")(e.target.value)} />
-        </div>
-        <div>
-          <Label htmlFor="cpf">CPF *</Label>
-          <Input
-            id="cpf"
-            inputMode="numeric"
-            placeholder="000.000.000-00"
-            value={form.cpf}
-            onChange={(e) => set("cpf")(formatarCpfDigitado(e.target.value))}
-          />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        <FichaFormParteA ficha={ficha} avaliacao={avaliacao} historico={historico} setF={setF} setA={setA} setH={setH}>
+          <Separator />
           <div>
-            <Label htmlFor="telefone">Telefone</Label>
-            <Input
-              id="telefone"
-              type="tel"
-              maxLength={20}
-              value={form.telefone}
-              onChange={(e) => set("telefone")(e.target.value)}
+            <Label htmlFor="situacaoRelatada" className="font-semibold text-foreground">
+              Se quiser, conte com suas palavras o que está acontecendo
+            </Label>
+            <Textarea
+              id="situacaoRelatada"
+              rows={5}
+              maxLength={2000}
+              className="mt-2"
+              value={situacaoRelatada}
+              onChange={(e) => setSituacaoRelatada(e.target.value)}
             />
           </div>
-          <div>
-            <Label htmlFor="idade">Idade</Label>
-            <Input
-              id="idade"
-              type="number"
-              min={0}
-              max={120}
-              value={form.idade}
-              onChange={(e) => set("idade")(e.target.value)}
-            />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="situacaoRelatada">Conte, se quiser, o que está acontecendo</Label>
-          <Textarea
-            id="situacaoRelatada"
-            rows={5}
-            maxLength={2000}
-            value={form.situacaoRelatada}
-            onChange={(e) => set("situacaoRelatada")(e.target.value)}
-          />
-        </div>
+        </FichaFormParteA>
 
         {(erroValidacao || envio.isError) && (
           <p role="alert" className="text-sm text-destructive">

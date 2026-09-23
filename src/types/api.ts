@@ -354,11 +354,12 @@ export interface FichaPublicaStatus {
   motivo: "expirado" | "invalido" | "usado" | null;
 }
 
+// Formulário público = Parte A do PIA: Ficha (numeroCaso/status são ignorados pelo
+// backend) + avaliação socioeconômica + histórico de atendimento.
 export interface FichaPublicaRequest {
-  nome: string;
-  cpf: string;
-  telefone?: string;
-  idade?: number;
+  ficha: FichaRequest;
+  avaliacao?: AvaliacaoSocioeconomicaRequest;
+  historico?: HistoricoAtendimentoRequest;
   situacaoRelatada?: string;
 }
 
@@ -377,4 +378,7 @@ export interface FichaPendente {
   dataRevisao: string | null;
   motivoRejeicao: string | null;
   fichaId: number | null;
+  ficha: FichaRequest;
+  avaliacao: AvaliacaoSocioeconomicaRequest | null;
+  historico: HistoricoAtendimentoRequest | null;
 }
