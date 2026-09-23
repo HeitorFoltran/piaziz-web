@@ -22,7 +22,7 @@ export default function Convites() {
     mutationFn: cancelarConviteFicha,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["convites-ficha"] });
-      toast.success("Convite cancelado.");
+      toast.success("Link cancelado.");
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -33,7 +33,7 @@ export default function Convites() {
     <Layout>
       <div className="container max-w-3xl py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Convites de preenchimento</h1>
+          <h1 className="text-2xl font-bold text-foreground">Links de preenchimento de ficha</h1>
           <p className="text-sm text-muted-foreground">
             Gere um link de uso único para a pessoa atendida preencher os dados iniciais. O envio vai
             para a fila de revisão da equipe.
@@ -47,18 +47,18 @@ export default function Convites() {
         </Card>
 
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold text-foreground">Convites gerados por você</h2>
+          <h2 className="text-sm font-semibold text-foreground">Links gerados por você</h2>
 
           {convitesQuery.isLoading && <Skeleton className="h-16 w-full" />}
           {convitesQuery.isError && (
             <Card className="border-destructive/40">
               <CardContent className="p-4 text-sm text-destructive">
-                Erro ao carregar convites: {(convitesQuery.error as Error).message}
+                Erro ao carregar links: {(convitesQuery.error as Error).message}
               </CardContent>
             </Card>
           )}
           {convitesQuery.isSuccess && convites.length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhum convite gerado ainda.</p>
+            <p className="text-sm text-muted-foreground">Nenhum link gerado ainda.</p>
           )}
 
           {convites.map((c) => {
@@ -67,7 +67,7 @@ export default function Convites() {
               <Card key={c.id}>
                 <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="text-sm">
-                    <p className="font-medium text-foreground">Convite #{c.id}</p>
+                    <p className="font-medium text-foreground">Link #{c.id}</p>
                     <p className="text-muted-foreground">
                       Criado em {formatDate(c.dataCriacao)} ·{" "}
                       {c.usadoEm ? `usado em ${formatDate(c.usadoEm)}` : `expira em ${formatDate(c.dataExpiracao)}`}

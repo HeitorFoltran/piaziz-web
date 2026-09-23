@@ -8,11 +8,11 @@ const navItemsEquipe = [
   { label: "Acompanhamentos", path: "/acompanhamentos" },
   { label: "Cadastros", path: "/cadastros" },
   { label: "Fichas pendentes", path: "/fichas-pendentes" },
-  { label: "Convites", path: "/convites" },
+  { label: "Links de preenchimento", path: "/convites" },
 ];
 
-// ESTAGIARIO não revisa fichas nem vê casos — o nav dele não linka nada além dos convites.
-const navItemsEstagiario = [{ label: "Convites", path: "/convites" }];
+// ESTAGIARIO não revisa fichas nem vê casos — o nav dele só linka a tela de links de preenchimento.
+const navItemsEstagiario = [{ label: "Links de preenchimento", path: "/convites" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();

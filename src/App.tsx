@@ -18,7 +18,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-// ESTAGIARIO só tem a tela de convites — qualquer outra rota autenticada devolve pra ela.
+// ESTAGIARIO só tem a tela de links de preenchimento (/convites) — qualquer outra rota autenticada devolve pra ela.
 function RequireAuth({ children, permiteEstagiario = false }: { children: ReactNode; permiteEstagiario?: boolean }) {
   const { auth } = useAuth();
   if (!auth) return <Navigate to="/login" replace />;

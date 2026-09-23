@@ -22,7 +22,7 @@ export function GerarConviteLink() {
     return (
       <Button onClick={() => gerar.mutate()} disabled={gerar.isPending} variant="outline" className="w-full">
         <Link2 className="w-4 h-4 mr-2" />
-        {gerar.isPending ? "Gerando..." : "Gerar link de convite"}
+        {gerar.isPending ? "Gerando..." : "Gerar link de preenchimento"}
       </Button>
     );
   }
