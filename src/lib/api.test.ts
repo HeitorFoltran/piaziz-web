@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getFichaPublicaStatus, setAuthToken, submitFichaPublica } from "./api";
+import { ApiError, getDashboardStats, getFichaPublicaStatus, setAuthToken, submitFichaPublica } from "./api";
 
 const fetchMock = vi.fn();
 
@@ -36,5 +36,15 @@ describe("rotas públicas do link de intake", () => {
     const erro = await submitFichaPublica("token-secreto", { ficha: { nome: "Maria", cpf: "52998224725" } }).catch((e) => e);
     expect(erro.message).not.toContain("token-secreto");
     expect(erro.message).not.toContain("detalhe interno");
+  });
+});
+
+describe("request()", () => {
+  it("resposta não-ok gera ApiError com o status e a mesma mensagem de antes", async () => {
+    fetchMock.mockResolvedValue(new Response("muitas tentativas", { status: 429 }));
+    const erro = await getDashboardStats().catch((e) => e);
+    expect(erro).toBeInstanceOf(ApiError);
+    expect(erro.status).toBe(429);
+    expect(erro.message).toBe("Erro 429 ao acessar /api/dashboard/stats: muitas tentativas");
   });
 });
