@@ -3,9 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "sonner";
 import Login from "./Login";
-import { login } from "@/lib/api";
+import { ApiError, login } from "@/lib/api";
 
-vi.mock("@/lib/api");
+// ApiError real (automock não roda o construtor, então `status` ficaria undefined).
+vi.mock("@/lib/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api")>()),
+  login: vi.fn(),
+}));
 
 const navigateMock = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -86,6 +90,21 @@ describe("Login", () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("E-mail ou senha inválidos.");
     });
+    expect(navigateMock).not.toHaveBeenCalled();
+  });
+
+  it("mostra mensagem de muitas tentativas quando login responde 429", async () => {
+    vi.mocked(login).mockRejectedValueOnce(new ApiError("Erro 429 ao acessar /api/auth/login", 429));
+    renderLogin();
+
+    fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: "fulana@exemplo.com" } });
+    fireEvent.change(screen.getByLabelText("Senha"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Entrar" }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+    });
+    expect(toast.error).not.toHaveBeenCalledWith("E-mail ou senha inválidos.");
     expect(navigateMock).not.toHaveBeenCalled();
   });
 });

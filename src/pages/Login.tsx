@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from "@/lib/api";
+import { ApiError, login } from "@/lib/api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,8 +17,13 @@ export default function Login() {
     try {
       await login(email, senha);
       navigate("/");
-    } catch {
-      toast.error("E-mail ou senha inválidos.");
+    } catch (err) {
+      // Sem o valor do Retry-After: os limites por e-mail e por IP liberam em momentos diferentes.
+      if (err instanceof ApiError && err.status === 429) {
+        toast.error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else {
+        toast.error("E-mail ou senha inválidos.");
+      }
     }
   };
 

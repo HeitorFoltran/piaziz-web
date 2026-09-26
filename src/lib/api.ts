@@ -40,6 +40,13 @@ function buildQuery(params: Record<string, string | number | undefined | null>):
   return qs ? `?${qs}` : "";
 }
 
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 let authToken: string | null = null;
 
 let onTokenChange: ((token: string | null) => void) | null = null;
@@ -95,8 +102,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     try { detail = await response.text(); } catch {
       // corpo da resposta não é texto legível — segue sem detalhe
     }
-    throw new Error(
+    throw new ApiError(
       `Erro ${response.status} ao acessar ${path}` + (detail ? `: ${detail}` : ""),
+      response.status,
     );
   }
 
