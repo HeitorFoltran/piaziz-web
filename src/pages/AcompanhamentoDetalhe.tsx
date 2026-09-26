@@ -13,11 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento } from "@/lib/api";
+import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
-import type { EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
+import type { AlteracaoFicha, EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
 
 const tipoMoradiaLabel: Record<string, string> = {
   CASA_PROPRIA: "Casa própria",
@@ -46,6 +46,13 @@ const categoriaEncaminhamentoLabel: Record<string, string> = {
   OUTRO: "Outro",
 };
 
+const TIPO_ALTERACAO_LABEL: Record<AlteracaoFicha["tipoEntidade"], string> = {
+  Ficha: "os dados da ficha",
+  AvaliacaoSocioeconomica: "a avaliação socioeconômica",
+  HistoricoAtendimento: "o histórico de atendimento",
+  AcolhimentoEquipe: "o acolhimento da equipe",
+};
+
 export default function AcompanhamentoDetalhe() {
   const { id } = useParams();
   const queryClient = useQueryClient();
@@ -53,11 +60,18 @@ export default function AcompanhamentoDetalhe() {
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
   const [fichaExpandida, setFichaExpandida] = useState(false);
+  const [alteracoesExpandidas, setAlteracoesExpandidas] = useState(false);
 
   const { data: ficha, isLoading, isError, error } = useQuery({
     queryKey: ["ficha", id],
     queryFn: () => getFicha(id!),
     enabled: !!id,
+  });
+
+  const alteracoesQuery = useQuery({
+    queryKey: ["ficha-alteracoes", id],
+    queryFn: () => getAlteracoesFicha(id!),
+    enabled: !!id && alteracoesExpandidas,
   });
 
   const { data: servicos = [] } = useQuery({
@@ -97,6 +111,7 @@ export default function AcompanhamentoDetalhe() {
     onSuccess: (fichaAtualizada) => {
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
       queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["ficha-alteracoes", id] });
       toast.success(`Status alterado para ${STATUS_LABEL[fichaAtualizada.status as StatusFicha]}.`);
     },
     onError: (err: Error) => toast.error(err.message),
@@ -107,6 +122,7 @@ export default function AcompanhamentoDetalhe() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
       queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["ficha-alteracoes", id] });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -209,7 +225,7 @@ export default function AcompanhamentoDetalhe() {
         </Card>
 
         {!isLoading && ficha && (
-          <Card className="mb-6">
+          <Card className="mb-4">
             <CardHeader className="cursor-pointer select-none p-4" onClick={() => setFichaExpandida((v) => !v)}>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-semibold text-aziz-blue">Dados do PIA preenchidos</CardTitle>
@@ -227,6 +243,42 @@ export default function AcompanhamentoDetalhe() {
                 <div><span className="text-muted-foreground block text-xs">Nível de Segurança</span><span className="font-medium">{ficha.nivelSeguranca != null ? `${ficha.nivelSeguranca} / 5` : "-"}</span></div>
                 <div><span className="text-muted-foreground block text-xs">Tipo de Moradia</span><span className="font-medium">{ficha.tipoMoradia ? (tipoMoradiaLabel[ficha.tipoMoradia] ?? ficha.tipoMoradia) : "-"}</span></div>
                 <div><span className="text-muted-foreground block text-xs">Qtd. Moradores</span><span className="font-medium">{ficha.qtdMoradores ?? "-"}</span></div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
+        {!isLoading && ficha && (
+          <Card className="mb-6">
+            <CardHeader className="cursor-pointer select-none p-4" onClick={() => setAlteracoesExpandidas((v) => !v)}>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-semibold text-aziz-blue">Alterações por outros profissionais</CardTitle>
+                {alteracoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Mostra edições feitas por alguém diferente de quem criou o registro. Edições feitas pela própria autora não aparecem aqui.
+              </p>
+            </CardHeader>
+            {alteracoesExpandidas && (
+              <CardContent className="p-4 pt-0 space-y-3 text-sm">
+                {alteracoesQuery.isLoading && Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                {alteracoesQuery.isError && (
+                  <p className="text-destructive">Não foi possível carregar as alterações.</p>
+                )}
+                {alteracoesQuery.data?.length === 0 && (
+                  <p className="text-muted-foreground">Nenhuma edição por outros profissionais.</p>
+                )}
+                {alteracoesQuery.data?.map((alt) => (
+                  <div key={alt.id}>
+                    <div className="flex items-center justify-between gap-4">
+                      <span>
+                        <span className="font-medium">{alt.editorNome}</span> editou {TIPO_ALTERACAO_LABEL[alt.tipoEntidade] ?? "este caso"}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(alt.timestamp)}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">registro criado por {alt.donoNome}</p>
+                  </div>
+                ))}
               </CardContent>
             )}
           </Card>

@@ -114,6 +114,16 @@ export interface InteracaoRequest {
   texto: string;
 }
 
+export interface AlteracaoFicha {
+  id: number;
+  tipoEntidade: "Ficha" | "AvaliacaoSocioeconomica" | "HistoricoAtendimento" | "AcolhimentoEquipe";
+  editorId: number;
+  editorNome: string;
+  donoId: number;
+  donoNome: string;
+  timestamp: string;
+}
+
 export interface Ficha {
   id: number;
   codigoFicha: string;
