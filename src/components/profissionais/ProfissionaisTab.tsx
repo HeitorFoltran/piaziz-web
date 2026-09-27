@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Filter, KeyRound, Pencil, Plus, Search } from "lucide-react";
+import { Filter, History, KeyRound, Pencil, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HistoricoContaDialog } from "@/components/profissionais/HistoricoContaDialog";
 import { ProfissionalDialog } from "@/components/profissionais/ProfissionalDialog";
 import { ResetarSenhaDialog } from "@/components/profissionais/ResetarSenhaDialog";
 import type { Perfil } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ export function ProfissionaisTab({ perfil }: { perfil: Perfil }) {
   const [dialogAberto, setDialogAberto] = useState(false);
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [resetando, setResetando] = useState<Profissional | null>(null);
+  const [vendoHistorico, setVendoHistorico] = useState<Profissional | null>(null);
 
   const profissionaisQuery = useQuery({
     queryKey: ["profissionais", search, servicoFiltro],
@@ -126,7 +128,7 @@ export function ProfissionaisTab({ perfil }: { perfil: Perfil }) {
                     {p.carteiraProfissional ? ` · ${p.carteiraProfissional}` : ""}
                   </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="flex flex-wrap gap-2 shrink-0">
                   {podeEditar(p) && (
                     <Button size="sm" variant="outline" onClick={() => abrirEdicao(p.id)} aria-label={`Editar ${p.nome}`}>
                       <Pencil className="w-3.5 h-3.5 mr-1.5" /> Editar
@@ -137,6 +139,9 @@ export function ProfissionaisTab({ perfil }: { perfil: Perfil }) {
                       <KeyRound className="w-3.5 h-3.5 mr-1.5" /> Resetar senha
                     </Button>
                   )}
+                  <Button size="sm" variant="outline" onClick={() => setVendoHistorico(p)} aria-label={`Histórico de ${p.nome}`}>
+                    <History className="w-3.5 h-3.5 mr-1.5" /> Histórico
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -155,6 +160,7 @@ export function ProfissionaisTab({ perfil }: { perfil: Perfil }) {
         onClose={fecharDialog}
       />
       <ResetarSenhaDialog profissional={resetando} onClose={() => setResetando(null)} />
+      <HistoricoContaDialog profissional={vendoHistorico} onClose={() => setVendoHistorico(null)} />
     </div>
   );
 }

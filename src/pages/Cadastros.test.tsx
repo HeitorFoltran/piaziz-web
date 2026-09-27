@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Cadastros from "./Cadastros";
-import { createProfissional, getFichas, getProfissionais, getServicos } from "@/lib/api";
+import { createProfissional, getFichas, getHistoricoConta, getProfissionais, getServicos } from "@/lib/api";
 import { useAuth, type Perfil } from "@/contexts/AuthContext";
 import type { Profissional } from "@/types/api";
 
@@ -15,6 +15,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
     getServicos: vi.fn(),
     getProfissionais: vi.fn(),
     createProfissional: vi.fn(),
+    getHistoricoConta: vi.fn(),
   };
 });
 
@@ -210,5 +211,46 @@ describe("Cadastros — aba Profissionais", () => {
     const d = within(dialog);
     fireEvent.click(d.getByRole("button", { name: /Gerar/ }));
     expect((d.getByLabelText("Senha provisória *") as HTMLInputElement).value).toHaveLength(12);
+  });
+});
+
+describe("Cadastros — histórico de uma conta", () => {
+  async function abrirHistorico() {
+    vi.mocked(getProfissionais).mockResolvedValue([profissional({ id: 2, nome: "Carlos", role: "DEV" })]);
+    renderEm("/cadastros?tab=profissionais", perfil());
+    // Só leitura: aparece até em conta DEV, onde o gerenciador não DEV não pode editar.
+    fireEvent.click(await screen.findByRole("button", { name: "Histórico de Carlos" }));
+    return screen.findByRole("dialog");
+  }
+
+  it("mostra rótulo da ação, autor, data e detalhe", async () => {
+    vi.mocked(getHistoricoConta).mockResolvedValue([
+      { id: 3, acao: "RESETAR_SENHA", detalhe: null, autorId: 1, autorNome: "Ana", timestamp: "2026-09-27T15:40:00" },
+      { id: 2, acao: "EDITAR", detalhe: "campos: nome, ativo", autorId: 1, autorNome: "Ana", timestamp: "2026-09-27T15:30:00" },
+      { id: 1, acao: "CRIAR", detalhe: null, autorId: 9, autorNome: null, timestamp: "2026-09-27T09:05:00" },
+    ]);
+    const dialog = within(await abrirHistorico());
+
+    expect(await dialog.findByText("Senha resetada")).toBeInTheDocument();
+    expect(dialog.getByText("Dados alterados")).toBeInTheDocument();
+    expect(dialog.getByText("Conta criada")).toBeInTheDocument();
+    expect(dialog.getAllByText("por Ana")).toHaveLength(2);
+    expect(dialog.getByText("por um usuário removido")).toBeInTheDocument();
+    expect(dialog.getByText("campos: nome, ativo")).toBeInTheDocument();
+    expect(dialog.getByText("27/09/2026 15:30")).toBeInTheDocument();
+    expect(getHistoricoConta).toHaveBeenCalledWith(2);
+  });
+
+  it("lista vazia mostra a mensagem de vazio", async () => {
+    vi.mocked(getHistoricoConta).mockResolvedValue([]);
+    const dialog = within(await abrirHistorico());
+    expect(await dialog.findByText("Nenhuma ação registrada para esta conta.")).toBeInTheDocument();
+  });
+
+  it("não busca o histórico antes de abrir", async () => {
+    vi.mocked(getProfissionais).mockResolvedValue([profissional({})]);
+    renderEm("/cadastros?tab=profissionais", perfil());
+    await screen.findByRole("button", { name: "Histórico de Carlos" });
+    expect(getHistoricoConta).not.toHaveBeenCalled();
   });
 });
