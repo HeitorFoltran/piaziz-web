@@ -354,20 +354,77 @@ export interface TipoAcompanhamentoRequest {
   nome: string;
 }
 
+export type RoleProfissional = "DEV" | "PADRAO" | "ESTAGIARIO";
+
+// Pela tela só se cria PADRAO ou ESTAGIARIO. Promover a DEV é só por SQL, de propósito.
+export type RoleCriavel = Exclude<RoleProfissional, "DEV">;
+
 export interface Profissional {
   id: number;
   nome: string;
+  username: string;
+  email: string | null;
+  /** Mascarado na listagem; completo em GET /api/profissionais/{id}. */
   cpf: string;
   carteiraProfissional: string | null;
   servicoId: number | null;
   servicoNome: string | null;
+  role: RoleProfissional;
+  ativo: boolean;
+  podeGerenciarProfissionais: boolean;
+  deveTrocarSenha: boolean;
 }
 
 export interface ProfissionalRequest {
   nome: string;
   cpf: string;
-  carteiraProfissional?: string;
+  carteiraProfissional?: string | null;
   servicoId?: number | null;
+  username: string;
+  email?: string | null;
+  senhaProvisoria: string;
+  role: RoleCriavel;
+  podeGerenciarProfissionais?: boolean;
+}
+
+// Mesmos campos da criação, menos a senha, mais `ativo`. `role` aceita DEV só para
+// reenviar o papel de uma conta DEV sem mudá-lo (a API recusa qualquer mudança de/para DEV).
+export interface ProfissionalEdicaoRequest {
+  nome: string;
+  cpf: string;
+  carteiraProfissional?: string | null;
+  servicoId?: number | null;
+  username: string;
+  email?: string | null;
+  role: RoleProfissional;
+  podeGerenciarProfissionais: boolean;
+  ativo: boolean;
+}
+
+export interface LoginResponse {
+  token: string;
+  profissionalId: number;
+  nome: string;
+  username: string;
+  email: string | null;
+  role: RoleProfissional;
+  deveTrocarSenha: boolean;
+}
+
+export interface UsuarioAtual {
+  id: number;
+  nome: string;
+  username: string;
+  email: string | null;
+  role: RoleProfissional;
+  /** Já vem calculado pela API: DEV sempre true. */
+  podeGerenciarProfissionais: boolean;
+  deveTrocarSenha: boolean;
+}
+
+export interface TrocarSenhaRequest {
+  senhaAtual: string;
+  novaSenha: string;
 }
 export type StatusConvite = "ATIVO" | "USADO" | "EXPIRADO" | "CANCELADO";
 
