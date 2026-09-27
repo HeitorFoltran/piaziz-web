@@ -118,12 +118,14 @@ export default function Acompanhamentos() {
                   <SelectItem value="dataAtualizacao">Última atualização</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="flex gap-3">
-                <div className="flex-1 space-y-1">
+              {/* min-w-0: o input de data nativo tem largura mínima intrínseca e vaza do card sem isso.
+                  Abaixo de 400px nem assim cabe lado a lado, então empilha. */}
+              <div className="flex flex-col min-[400px]:flex-row gap-3">
+                <div className="flex-1 min-w-0 space-y-1">
                   <Label htmlFor="filtro-data-de" className="text-xs">De</Label>
                   <Input id="filtro-data-de" type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
                 </div>
-                <div className="flex-1 space-y-1">
+                <div className="flex-1 min-w-0 space-y-1">
                   <Label htmlFor="filtro-data-ate" className="text-xs">Até</Label>
                   <Input id="filtro-data-ate" type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
                 </div>
