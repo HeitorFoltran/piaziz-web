@@ -8,21 +8,21 @@ import { Label } from "@/components/ui/label";
 import { ApiError, login } from "@/lib/api";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, senha);
-      navigate("/");
+      const res = await login(identificador, senha);
+      navigate(res.deveTrocarSenha ? "/trocar-senha" : "/");
     } catch (err) {
-      // Sem o valor do Retry-After: os limites por e-mail e por IP liberam em momentos diferentes.
+      // Sem o valor do Retry-After: os limites por conta e por IP liberam em momentos diferentes.
       if (err instanceof ApiError && err.status === 429) {
         toast.error("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
       } else {
-        toast.error("E-mail ou senha inválidos.");
+        toast.error("Usuário, e-mail ou senha inválidos.");
       }
     }
   };
@@ -33,12 +33,15 @@ export default function Login() {
         <h1 className="mb-6 text-xl font-semibold text-foreground">Entrar</h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="identificador">E-mail ou usuário</Label>
             <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="identificador"
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              value={identificador}
+              onChange={(e) => setIdentificador(e.target.value)}
               required
             />
           </div>
@@ -47,6 +50,7 @@ export default function Login() {
             <Input
               id="senha"
               type="password"
+              autoComplete="current-password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               required

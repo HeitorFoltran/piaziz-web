@@ -1,22 +1,22 @@
 import Layout from "@/components/Layout";
 import { GerarConviteLink } from "@/components/GerarConviteLink";
+import { ProfissionaisTab } from "@/components/profissionais/ProfissionaisTab";
+import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Search, Plus, Filter, Share2, Pencil } from "lucide-react";
+import { Search, Plus, Share2, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getFichas,
   getServicos,
-  getProfissionais,
   createServico,
   atualizarServico,
   getTiposAcompanhamento,
@@ -25,12 +25,14 @@ import {
 } from "@/lib/api";
 import type { Servico, ServicoRequest, TipoAcompanhamento, TipoAcompanhamentoRequest } from "@/types/api";
 
-const tabs = [
+const tabsBase = [
   { id: "fichas", label: "Ficha Pessoal (PIA)" },
   { id: "servicos", label: "Serviços" },
   { id: "tipos-acompanhamento", label: "Tipos de Acompanhamento" },
-  { id: "profissionais", label: "Profissionais" },
 ];
+
+// Só entra para gerenciadores (DEV, ou PADRAO com a flag). Esconder é UX: a API devolve 403 de qualquer jeito.
+const tabProfissionais = { id: "profissionais", label: "Profissionais" };
 
 function ListSkeleton({ rows = 3 }: { rows?: number }) {
   return (
@@ -61,12 +63,14 @@ const emptyTipoAcompanhamento: TipoAcompanhamentoRequest = { nome: "" };
 
 export default function Cadastros() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") || "fichas";
+  const { auth } = useAuth();
+  const tabs = auth?.podeGerenciarProfissionais ? [...tabsBase, tabProfissionais] : tabsBase;
+  const tabPedida = searchParams.get("tab");
+  const activeTab = tabs.some((t) => t.id === tabPedida) ? tabPedida : "fichas";
   const action = searchParams.get("action");
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [profServico, setProfServico] = useState("all");
   const [shareOpen, setShareOpen] = useState(false);
 
   const [servicoModalOpen, setServicoModalOpen] = useState(false);
@@ -97,22 +101,6 @@ export default function Cadastros() {
     queryKey: ["tipos-acompanhamento"],
     queryFn: getTiposAcompanhamento,
     enabled: activeTab === "tipos-acompanhamento",
-  });
-
-  const profissionaisQuery = useQuery({
-    queryKey: ["profissionais", search, profServico],
-    queryFn: () =>
-      getProfissionais({
-        q: search || undefined,
-        servicoId: profServico === "all" ? undefined : profServico,
-      }),
-    enabled: activeTab === "profissionais",
-  });
-
-  const servicosFiltroQuery = useQuery({
-    queryKey: ["servicos"],
-    queryFn: getServicos,
-    enabled: activeTab === "profissionais",
   });
 
   const criarServicoMutation = useMutation({
@@ -232,7 +220,6 @@ export default function Cadastros() {
   const setTab = (tab: string) => {
     setSearchParams({ tab });
     setSearch("");
-    setProfServico("all");
   };
 
   return (
@@ -375,51 +362,7 @@ export default function Cadastros() {
           </div>
         )}
 
-        {activeTab === "profissionais" && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Buscar profissionais..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
-              </div>
-              <Select value={profServico} onValueChange={setProfServico}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Filtro" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {(servicosFiltroQuery.data ?? []).map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {profissionaisQuery.isLoading && <ListSkeleton />}
-            {profissionaisQuery.isError && <ErrorCard message={(profissionaisQuery.error as Error)?.message} />}
-            {!profissionaisQuery.isLoading && !profissionaisQuery.isError && (
-              <div className="space-y-2">
-                {(profissionaisQuery.data ?? []).map((p) => (
-                  <Card key={p.id} className="hover:border-aziz-blue/30 transition-colors">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-foreground">{p.nome}</p>
-                        <p className="text-sm text-muted-foreground">
-                          CPF: {p.cpf}{p.carteiraProfissional ? ` · ${p.carteiraProfissional}` : ""}
-                        </p>
-                      </div>
-                      {p.servicoNome && <Badge>{p.servicoNome}</Badge>}
-                    </CardContent>
-                  </Card>
-                ))}
-                {(profissionaisQuery.data ?? []).length === 0 && (
-                  <p className="text-center text-muted-foreground py-12">Nenhum profissional encontrado.</p>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        {activeTab === "profissionais" && auth && <ProfissionaisTab perfil={auth} />}
 
         <Dialog open={shareOpen} onOpenChange={setShareOpen}>
           <DialogContent className="sm:max-w-md">

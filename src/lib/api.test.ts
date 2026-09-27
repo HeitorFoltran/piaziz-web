@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ApiError, getDashboardStats, getFichaPublicaStatus, setAuthToken, submitFichaPublica } from "./api";
+import { ApiError, getDashboardStats, getFichaPublicaStatus, login, mensagemDeErro, setAuthToken, submitFichaPublica } from "./api";
 
 const fetchMock = vi.fn();
 
@@ -46,5 +46,29 @@ describe("request()", () => {
     expect(erro).toBeInstanceOf(ApiError);
     expect(erro.status).toBe(429);
     expect(erro.message).toBe("Erro 429 ao acessar /api/dashboard/stats: muitas tentativas");
+  });
+
+  it("guarda o campo message do corpo JSON de erro em mensagemApi", async () => {
+    const corpo = { status: 400, error: "Bad Request", message: "username já em uso" };
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(corpo), { status: 400 }));
+    const erro = await getDashboardStats().catch((e) => e);
+    expect(erro.mensagemApi).toBe("username já em uso");
+    expect(mensagemDeErro(erro)).toBe("username já em uso");
+  });
+
+  it("sem corpo JSON, mensagemDeErro cai na mensagem do erro", async () => {
+    fetchMock.mockResolvedValue(new Response("texto", { status: 500 }));
+    const erro = await getDashboardStats().catch((e) => e);
+    expect(erro.mensagemApi).toBeUndefined();
+    expect(mensagemDeErro(erro)).toBe("Erro 500 ao acessar /api/dashboard/stats: texto");
+  });
+});
+
+describe("login()", () => {
+  it("envia o identificador, não mais o campo email", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ token: "t" }), { status: 200 }));
+    await login("ana.beatriz", "segredo123");
+    const init = fetchMock.mock.lastCall![1] as RequestInit;
+    expect(JSON.parse(init.body as string)).toEqual({ identificador: "ana.beatriz", senha: "segredo123" });
   });
 });

@@ -18,7 +18,9 @@ import type {
   HistoricoAtendimentoRequest,
   Interacao,
   InteracaoRequest,
+  LoginResponse,
   Profissional,
+  ProfissionalEdicaoRequest,
   ProfissionalRequest,
   RelatorioAnalitico,
   Servico,
@@ -26,6 +28,8 @@ import type {
   StatusFichaPendente,
   TipoAcompanhamento,
   TipoAcompanhamentoRequest,
+  TrocarSenhaRequest,
+  UsuarioAtual,
 } from "@/types/api";
 
 export const API_BASE_URL =
@@ -43,10 +47,22 @@ function buildQuery(params: Record<string, string | number | undefined | null>):
 }
 
 export class ApiError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+    /** O campo `message` do corpo de erro da API (GlobalExceptionHandler), quando veio. */
+    readonly mensagemApi?: string,
+  ) {
     super(message);
     this.name = "ApiError";
   }
+}
+
+// Texto para mostrar ao usuário: a mensagem que a API devolveu, se houver.
+export function mensagemDeErro(err: unknown): string {
+  if (err instanceof ApiError && err.mensagemApi) return err.mensagemApi;
+  if (err instanceof Error) return err.message;
+  return "Erro inesperado. Tente novamente.";
 }
 
 let authToken: string | null = null;
@@ -62,14 +78,26 @@ export function setAuthToken(token: string | null) {
   onTokenChange?.(token);
 }
 
-export async function login(email: string, senha: string) {
-  const res = await request<{
-    token: string;
-    profissionalId: number;
-    nome: string;
-    email: string;
-    role: string;
-  }>("/api/auth/login", { method: "POST", body: JSON.stringify({ email, senha }) });
+// `identificador` é username ou email; a API decide pela presença de "@".
+export async function login(identificador: string, senha: string): Promise<LoginResponse> {
+  const res = await request<LoginResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ identificador, senha }),
+  });
+  setAuthToken(res.token);
+  return res;
+}
+
+export function getMe(): Promise<UsuarioAtual> {
+  return request<UsuarioAtual>("/api/auth/me");
+}
+
+// A API revoga as outras sessões e devolve um token novo para esta continuar.
+export async function trocarSenha(body: TrocarSenhaRequest): Promise<LoginResponse> {
+  const res = await request<LoginResponse>("/api/auth/senha", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
   setAuthToken(res.token);
   return res;
 }
@@ -104,9 +132,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     try { detail = await response.text(); } catch {
       // corpo da resposta não é texto legível — segue sem detalhe
     }
+    let mensagemApi: string | undefined;
+    try {
+      const corpo = JSON.parse(detail);
+      if (typeof corpo?.message === "string") mensagemApi = corpo.message;
+    } catch {
+      // corpo não é JSON — fica só o detalhe cru
+    }
     throw new ApiError(
       `Erro ${response.status} ao acessar ${path}` + (detail ? `: ${detail}` : ""),
       response.status,
+      mensagemApi,
     );
   }
 
@@ -232,10 +268,28 @@ export function getProfissionais(params?: {
   );
 }
 
+export function getProfissional(id: number): Promise<Profissional> {
+  return request<Profissional>(`/api/profissionais/${id}`);
+}
+
 export function createProfissional(body: ProfissionalRequest): Promise<Profissional> {
   return request<Profissional>("/api/profissionais", {
     method: "POST",
     body: JSON.stringify(body),
+  });
+}
+
+export function updateProfissional(id: number, body: ProfissionalEdicaoRequest): Promise<Profissional> {
+  return request<Profissional>(`/api/profissionais/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export function resetarSenhaProfissional(id: number, senhaProvisoria: string): Promise<void> {
+  return request<void>(`/api/profissionais/${id}/resetar-senha`, {
+    method: "POST",
+    body: JSON.stringify({ senhaProvisoria }),
   });
 }
 
