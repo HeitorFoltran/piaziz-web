@@ -2,6 +2,7 @@ import type {
   Acompanhamento,
   AcolhimentoEquipe,
   AcolhimentoEquipeRequest,
+  AlteracaoFicha,
   AvaliacaoSocioeconomica,
   AvaliacaoSocioeconomicaRequest,
   ConviteFicha,
@@ -171,6 +172,10 @@ export function createEncaminhamento(
 
 export function getInteracoes(fichaId: number | string): Promise<Interacao[]> {
   return request<Interacao[]>(`/api/fichas/${fichaId}/interacoes`);
+}
+
+export function getAlteracoesFicha(fichaId: number | string): Promise<AlteracaoFicha[]> {
+  return request<AlteracaoFicha[]>(`/api/fichas/${fichaId}/alteracoes`);
 }
 
 export function createInteracao(
