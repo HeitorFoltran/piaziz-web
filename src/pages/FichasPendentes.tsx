@@ -19,6 +19,13 @@ import type { FichaPendente, StatusFichaPendente } from "@/types/api";
 
 const filtros: StatusFichaPendente[] = ["PENDENTE", "APROVADA", "REJEITADA"];
 
+// Prazos fixos no texto, espelhando retencao.ficha-pendente.* no application.properties da API.
+// Se a configuração mudar lá, este texto precisa mudar junto.
+const avisoRetencao: Partial<Record<StatusFichaPendente, string>> = {
+  APROVADA: "Envios aprovados são apagados 30 dias após a revisão. Os dados continuam na ficha criada.",
+  REJEITADA: "Envios rejeitados são apagados 90 dias após a revisão.",
+};
+
 export default function FichasPendentes() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -93,6 +100,8 @@ export default function FichasPendentes() {
             </button>
           ))}
         </div>
+
+        {avisoRetencao[filtro] && <p className="text-xs text-muted-foreground">{avisoRetencao[filtro]}</p>}
 
         {pendentesQuery.isLoading && <Skeleton className="h-24 w-full" />}
         {pendentesQuery.isError && (
