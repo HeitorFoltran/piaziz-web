@@ -9,6 +9,15 @@ export function formatDate(iso: string | null | undefined): string {
   }
 }
 
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return "-";
+  try {
+    return format(parseISO(iso), "dd/MM/yyyy HH:mm");
+  } catch {
+    return iso;
+  }
+}
+
 const MESES_ABREV = [
   "Jan",
   "Fev",

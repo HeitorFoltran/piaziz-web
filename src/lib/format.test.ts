@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, mesAbreviado } from "./format";
+import { formatDate, formatDateTime, mesAbreviado } from "./format";
 
 describe("formatDate", () => {
   it("formata ISO válido como dd/MM/yyyy", () => {
@@ -16,6 +16,20 @@ describe("formatDate", () => {
 
   it("retorna a string original para ISO inválido", () => {
     expect(formatDate("não-é-uma-data")).toBe("não-é-uma-data");
+  });
+});
+
+describe("formatDateTime", () => {
+  it("formata LocalDateTime sem fuso como dd/MM/yyyy HH:mm", () => {
+    expect(formatDateTime("2026-09-27T14:05:33.123")).toBe("27/09/2026 14:05");
+  });
+
+  it("retorna '-' para null", () => {
+    expect(formatDateTime(null)).toBe("-");
+  });
+
+  it("retorna a string original para ISO inválido", () => {
+    expect(formatDateTime("não-é-uma-data")).toBe("não-é-uma-data");
   });
 });
 

@@ -375,6 +375,19 @@ export interface Profissional {
   deveTrocarSenha: boolean;
 }
 
+export type AcaoConta = "CRIAR" | "EDITAR" | "RESETAR_SENHA" | "TROCAR_PROPRIA_SENHA";
+
+export interface ContaHistorico {
+  id: number;
+  acao: AcaoConta;
+  /** Já vem legível da API (ex.: "campos: nome, ativo"). Nunca contém senha nem hash. */
+  detalhe: string | null;
+  autorId: number;
+  /** null se o autor não existir mais. */
+  autorNome: string | null;
+  timestamp: string;
+}
+
 export interface ProfissionalRequest {
   nome: string;
   cpf: string;

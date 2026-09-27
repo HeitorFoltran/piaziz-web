@@ -5,6 +5,7 @@ import type {
   AlteracaoFicha,
   AvaliacaoSocioeconomica,
   AvaliacaoSocioeconomicaRequest,
+  ContaHistorico,
   ConviteFicha,
   DashboardStats,
   Encaminhamento,
@@ -291,6 +292,10 @@ export function resetarSenhaProfissional(id: number, senhaProvisoria: string): P
     method: "POST",
     body: JSON.stringify({ senhaProvisoria }),
   });
+}
+
+export function getHistoricoConta(id: number): Promise<ContaHistorico[]> {
+  return request<ContaHistorico[]>(`/api/profissionais/${id}/historico`);
 }
 
 export function atualizarFicha(
