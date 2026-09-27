@@ -1,8 +1,10 @@
 import Layout from "@/components/Layout";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, ChevronRight } from "lucide-react";
+import { Search, Filter, ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TiposAcompanhamentoTags } from "@/components/ficha/TiposAcompanhamentoTags";
@@ -20,11 +22,16 @@ const statusOptions = [
   { value: "ENCERRADO", label: STATUS_LABEL.ENCERRADO },
 ];
 
+type CampoData = "dataAtualizacao" | "dataCriacao";
+
 export default function Acompanhamentos() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterServico, setFilterServico] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [campoData, setCampoData] = useState<CampoData>("dataAtualizacao");
+  const [dataDe, setDataDe] = useState("");
+  const [dataAte, setDataAte] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 350);
@@ -45,8 +52,18 @@ export default function Acompanhamentos() {
     queryFn: getServicos,
   });
 
-  const items = (data ?? []).filter((item) =>
-    filterStatus === "all" ? true : item.status === filterStatus
+  // Filtro no cliente, como o de status: a listagem vem inteira, sem paginação.
+  // Compara strings YYYY-MM-DD: a API manda LocalDateTime sem fuso (horário de Brasília),
+  // e converter com new Date(...) pode jogar o registro para o dia anterior.
+  const intervaloInvalido = dataDe !== "" && dataAte !== "" && dataDe > dataAte;
+  const noIntervalo = (iso: string) => {
+    if (intervaloInvalido) return true;
+    const dia = iso.slice(0, 10);
+    return (!dataDe || dia >= dataDe) && (!dataAte || dia <= dataAte);
+  };
+
+  const items = (data ?? []).filter(
+    (item) => (filterStatus === "all" || item.status === filterStatus) && noIntervalo(item[campoData])
   );
 
   return (
@@ -91,6 +108,41 @@ export default function Acompanhamentos() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 mt-3">
+              <Select value={campoData} onValueChange={(v) => setCampoData(v as CampoData)}>
+                <SelectTrigger className="w-full sm:w-[200px]" aria-label="Campo de data">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dataCriacao">Data de criação</SelectItem>
+                  <SelectItem value="dataAtualizacao">Última atualização</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="flex gap-3">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="filtro-data-de" className="text-xs">De</Label>
+                  <Input id="filtro-data-de" type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="filtro-data-ate" className="text-xs">Até</Label>
+                  <Input id="filtro-data-ate" type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+                </div>
+              </div>
+              {(dataDe || dataAte) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setDataDe("");
+                    setDataAte("");
+                  }}
+                >
+                  <X className="w-4 h-4 mr-1" /> Limpar datas
+                </Button>
+              )}
+            </div>
+            {intervaloInvalido && (
+              <p className="text-xs text-destructive mt-2">A data inicial é depois da final.</p>
+            )}
           </CardContent>
         </Card>
 
@@ -125,7 +177,7 @@ export default function Acompanhamentos() {
                           {STATUS_LABEL[status]}
                         </Badge>
                         <span className="text-xs text-muted-foreground hidden md:block">
-                          Atualizado: {formatDate(item.dataAtualizacao)}
+                          {campoData === "dataCriacao" ? "Criado" : "Atualizado"}: {formatDate(item[campoData])}
                         </span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
