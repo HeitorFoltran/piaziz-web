@@ -61,7 +61,7 @@ function renderPagina() {
 }
 
 function preencher(atual: string, nova: string, confirmacao: string) {
-  fireEvent.change(screen.getByLabelText("Senha atual"), { target: { value: atual } });
+  fireEvent.change(screen.getByLabelText(/^Senha (atual|provisória)$/), { target: { value: atual } });
   fireEvent.change(screen.getByLabelText("Senha nova"), { target: { value: nova } });
   fireEvent.change(screen.getByLabelText("Confirme a senha nova"), { target: { value: confirmacao } });
   fireEvent.click(screen.getByRole("button", { name: "Salvar senha" }));
@@ -85,6 +85,15 @@ describe("TrocarSenha", () => {
   it("no modo obrigatório, mostra o aviso de senha provisória", () => {
     renderPagina();
     expect(screen.getByText("Sua senha é provisória. Defina uma senha nova para continuar.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Senha provisória")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Senha atual")).not.toBeInTheDocument();
+  });
+
+  it("fora do modo obrigatório, o primeiro campo é a senha atual", () => {
+    vi.mocked(useAuth).mockReturnValue({ auth: { ...perfil, deveTrocarSenha: false }, carregando: false });
+    renderPagina();
+    expect(screen.getByLabelText("Senha atual")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Senha provisória")).not.toBeInTheDocument();
   });
 
   it("recusa senha nova com menos de 8 caracteres", () => {

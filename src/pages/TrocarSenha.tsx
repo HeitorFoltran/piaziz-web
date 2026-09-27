@@ -63,7 +63,7 @@ export default function TrocarSenha() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="space-y-1.5">
-          <Label htmlFor="senha-atual">Senha atual</Label>
+          <Label htmlFor="senha-atual">{obrigatorio ? "Senha provisória" : "Senha atual"}</Label>
           <Input
             id="senha-atual"
             type="password"
