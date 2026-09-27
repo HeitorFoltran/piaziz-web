@@ -13,9 +13,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ["Libre Franklin", "sans-serif"],
-        body: ["Libre Franklin", "sans-serif"],
-        logo: ["MuseoModerno", "cursive"],
+        heading: ["Libre Franklin Variable", "sans-serif"],
+        body: ["Libre Franklin Variable", "sans-serif"],
+        logo: ["MuseoModerno Variable", "cursive"],
       },
       colors: {
         border: "hsl(var(--border))",
