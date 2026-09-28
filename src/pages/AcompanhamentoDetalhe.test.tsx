@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AcompanhamentoDetalhe from "./AcompanhamentoDetalhe";
-import { getAlteracoesFicha, getFicha, getTiposAcompanhamento, getVisualizacoesFicha } from "@/lib/api";
+import { getAlteracoesFicha, getFicha, getTiposAcompanhamento } from "@/lib/api";
 import type { AlteracaoFicha, Ficha } from "@/types/api";
 
 vi.mock("@/lib/api");
@@ -27,6 +27,8 @@ function alteracao(overrides: Partial<AlteracaoFicha>): AlteracaoFicha {
   return {
     id: 1,
     tipoEntidade: "Ficha",
+    acao: "EDITOU",
+    detalhe: null,
     editorId: 2,
     editorNome: "Ana",
     donoId: 1,
@@ -49,8 +51,8 @@ function renderPagina() {
   );
 }
 
-async function abrirAlteracoes() {
-  fireEvent.click(await screen.findByText("Alterações por outros profissionais"));
+async function abrirHistorico() {
+  fireEvent.click(await screen.findByText("Histórico de alterações"));
 }
 
 beforeEach(() => {
@@ -59,34 +61,66 @@ beforeEach(() => {
   vi.mocked(getTiposAcompanhamento).mockResolvedValue([]);
 });
 
-describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => {
-  it("não busca as alterações enquanto a seção está fechada", async () => {
+describe("AcompanhamentoDetalhe - histórico de alterações", () => {
+  it("não busca o histórico enquanto a seção está fechada", async () => {
     renderPagina();
-    expect(await screen.findByText("Alterações por outros profissionais")).toBeInTheDocument();
+    expect(await screen.findByText("Histórico de alterações")).toBeInTheDocument();
     expect(getAlteracoesFicha).not.toHaveBeenCalled();
   });
 
-  it("ao abrir, lista editores com o rótulo de cada tipo de registro", async () => {
+  it("ao abrir, mostra uma frase por ação, com data e hora, e a criação por último", async () => {
     vi.mocked(getAlteracoesFicha).mockResolvedValue([
-      alteracao({ id: 1, tipoEntidade: "AvaliacaoSocioeconomica", editorNome: "Ana" }),
-      alteracao({ id: 2, tipoEntidade: "HistoricoAtendimento", editorNome: "Carla" }),
+      alteracao({
+        id: 5,
+        tipoEntidade: "StatusFicha",
+        acao: "MUDOU_STATUS",
+        detalhe: "Ativo -> Arquivado",
+        editorNome: "Ana",
+        timestamp: "2026-09-28T14:03:00",
+      }),
+      alteracao({ id: 4, tipoEntidade: "AvaliacaoSocioeconomica", acao: "EDITOU", editorNome: "Carlos" }),
+      alteracao({ id: 3, tipoEntidade: "HistoricoAtendimento", acao: "PREENCHEU", editorNome: "Carla" }),
+      alteracao({ id: 2, tipoEntidade: "TiposAcompanhamento", acao: "ALTEROU_TIPOS", editorNome: "Ana" }),
+      alteracao({ id: null, tipoEntidade: "Ficha", acao: "CRIOU", editorNome: "Beatriz", timestamp: "2026-09-20T09:00:00" }),
     ]);
     renderPagina();
-    await abrirAlteracoes();
+    await abrirHistorico();
 
-    expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.getByText("Carla")).toBeInTheDocument();
-    expect(screen.getByText(/editou a avaliação socioeconômica/)).toBeInTheDocument();
-    expect(screen.getByText(/editou o histórico de atendimento/)).toBeInTheDocument();
+    await screen.findByText("Beatriz");
+    // Cada linha do histórico é um div com a frase no primeiro span e a data no segundo.
+    const card = screen.getByText("Histórico de alterações").closest(".rounded-lg") as HTMLElement;
+    const linhas = Array.from(card.querySelectorAll("div.justify-between > span:first-child")).map((el) => el.textContent);
+    expect(linhas).toEqual([
+      "Ana mudou o status: Ativo -> Arquivado",
+      "Carlos editou a avaliação socioeconômica",
+      "Carla preencheu o histórico de atendimento",
+      "Ana alterou os tipos de acompanhamento",
+      "Beatriz criou o caso",
+    ]);
+    expect(screen.getByText("28/09/2026 14:03")).toBeInTheDocument();
+    expect(screen.getByText("20/09/2026 09:00")).toBeInTheDocument();
+    expect(screen.queryByText(/registro criado por/)).not.toBeInTheDocument();
     expect(getAlteracoesFicha).toHaveBeenCalledWith("7");
+  });
+
+  it("mostra 'Caso criado' sem nome e 'Um usuário removido' para editor que não existe mais", async () => {
+    vi.mocked(getAlteracoesFicha).mockResolvedValue([
+      alteracao({ id: 2, acao: "EDITOU", editorNome: null }),
+      alteracao({ id: null, acao: "CRIOU", editorNome: null }),
+    ]);
+    renderPagina();
+    await abrirHistorico();
+
+    expect(await screen.findByText("Um usuário removido editou os dados da ficha")).toBeInTheDocument();
+    expect(screen.getByText("Caso criado")).toBeInTheDocument();
   });
 
   it("ao abrir, com lista vazia, mostra o texto de vazio", async () => {
     vi.mocked(getAlteracoesFicha).mockResolvedValue([]);
     renderPagina();
-    await abrirAlteracoes();
+    await abrirHistorico();
 
-    expect(await screen.findByText("Nenhuma edição por outros profissionais.")).toBeInTheDocument();
+    expect(await screen.findByText("Nenhuma alteração registrada.")).toBeInTheDocument();
   });
 
   it("mostra 'este caso' para um tipoEntidade desconhecido", async () => {
@@ -94,7 +128,7 @@ describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => 
       alteracao({ tipoEntidade: "Desconhecido" as AlteracaoFicha["tipoEntidade"] }),
     ]);
     renderPagina();
-    await abrirAlteracoes();
+    await abrirHistorico();
 
     expect(await screen.findByText(/editou este caso/)).toBeInTheDocument();
   });
@@ -102,7 +136,7 @@ describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => 
   it("mostra mensagem genérica quando a busca falha", async () => {
     vi.mocked(getAlteracoesFicha).mockRejectedValue(new Error("Erro 404 ao acessar /api/fichas/7/alteracoes"));
     renderPagina();
-    await abrirAlteracoes();
+    await abrirHistorico();
 
     await waitFor(() => {
       expect(screen.getByText("Não foi possível carregar as alterações.")).toBeInTheDocument();
@@ -111,38 +145,12 @@ describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => 
   });
 });
 
-describe("AcompanhamentoDetalhe - visualizações", () => {
-  async function abrirVisualizacoes() {
-    fireEvent.click(await screen.findByText("Visualizações"));
-  }
-
-  it("não busca as visualizações enquanto a seção está fechada", async () => {
+describe("AcompanhamentoDetalhe - cards removidos", () => {
+  it("não mostra os cards de visualizações e de dados do PIA", async () => {
     renderPagina();
-    expect(await screen.findByText("Visualizações")).toBeInTheDocument();
-    expect(getVisualizacoesFicha).not.toHaveBeenCalled();
-  });
-
-  it("ao abrir, lista quem abriu o caso e quando", async () => {
-    vi.mocked(getVisualizacoesFicha).mockResolvedValue([
-      { profissionalId: 2, profissionalNome: "Ana", timestamp: "2026-09-25T14:30:00" },
-      { profissionalId: 3, profissionalNome: null, timestamp: "2026-09-20T09:05:00" },
-    ]);
-    renderPagina();
-    await abrirVisualizacoes();
-
-    expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.getByText("25/09/2026 14:30")).toBeInTheDocument();
-    expect(screen.getByText(/Um usuário removido abriu este caso/)).toBeInTheDocument();
-    expect(screen.getByText("20/09/2026 09:05")).toBeInTheDocument();
-    expect(screen.getByText(/Mostra as 200 mais recentes/)).toBeInTheDocument();
-    expect(getVisualizacoesFicha).toHaveBeenCalledWith("7");
-  });
-
-  it("ao abrir, com lista vazia, mostra o texto de vazio", async () => {
-    vi.mocked(getVisualizacoesFicha).mockResolvedValue([]);
-    renderPagina();
-    await abrirVisualizacoes();
-
-    expect(await screen.findByText("Nenhuma visualização registrada.")).toBeInTheDocument();
+    expect(await screen.findByText("F-007")).toBeInTheDocument();
+    expect(screen.queryByText("Visualizações")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dados do PIA preenchidos")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Editar/Visualizar ficha" })).toBeInTheDocument();
   });
 });

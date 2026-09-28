@@ -13,19 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha, getVisualizacoesFicha } from "@/lib/api";
+import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
 import type { AlteracaoFicha, EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
-
-const tipoMoradiaLabel: Record<string, string> = {
-  CASA_PROPRIA: "Casa própria",
-  ALUGADA: "Alugada",
-  CEDIDA: "Cedida",
-  ABRIGO: "Abrigo",
-  OUTRO: "Outro",
-};
 
 const emptyEncaminhamento: EncaminhamentoRequest = {
   servicoId: 0,
@@ -46,12 +38,38 @@ const categoriaEncaminhamentoLabel: Record<string, string> = {
   OUTRO: "Outro",
 };
 
+// Antes do lote 5 a API só gravava alterações feitas por alguém diferente de quem criou o
+// registro. Ajustar para a data em que o lote 5 entrar em produção.
+const INICIO_HISTORICO_COMPLETO = "28/09/2026";
+
+// StatusFicha e TiposAcompanhamento têm frase própria (MUDOU_STATUS / ALTEROU_TIPOS), mas ficam
+// aqui para o Record cobrir todos os tipos.
 const TIPO_ALTERACAO_LABEL: Record<AlteracaoFicha["tipoEntidade"], string> = {
   Ficha: "os dados da ficha",
   AvaliacaoSocioeconomica: "a avaliação socioeconômica",
   HistoricoAtendimento: "o histórico de atendimento",
   AcolhimentoEquipe: "o acolhimento da equipe",
+  StatusFicha: "o status",
+  TiposAcompanhamento: "os tipos de acompanhamento",
 };
+
+function fraseAlteracao(alt: AlteracaoFicha) {
+  if (alt.acao === "CRIOU" && !alt.editorNome) return "Caso criado";
+  const nome = alt.editorNome ? <span className="font-medium">{alt.editorNome}</span> : "Um usuário removido";
+  const parte = TIPO_ALTERACAO_LABEL[alt.tipoEntidade] ?? "este caso";
+  switch (alt.acao) {
+    case "CRIOU":
+      return <>{nome} criou o caso</>;
+    case "PREENCHEU":
+      return <>{nome} preencheu {parte}</>;
+    case "MUDOU_STATUS":
+      return <>{nome} mudou o status: {alt.detalhe}</>;
+    case "ALTEROU_TIPOS":
+      return <>{nome} alterou os tipos de acompanhamento</>;
+    default:
+      return <>{nome} editou {parte}</>;
+  }
+}
 
 export default function AcompanhamentoDetalhe() {
   const { id } = useParams();
@@ -59,9 +77,7 @@ export default function AcompanhamentoDetalhe() {
   const [novoComentario, setNovoComentario] = useState("");
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
-  const [fichaExpandida, setFichaExpandida] = useState(false);
   const [alteracoesExpandidas, setAlteracoesExpandidas] = useState(false);
-  const [visualizacoesExpandidas, setVisualizacoesExpandidas] = useState(false);
 
   const { data: ficha, isLoading, isError, error } = useQuery({
     queryKey: ["ficha", id],
@@ -73,12 +89,6 @@ export default function AcompanhamentoDetalhe() {
     queryKey: ["ficha-alteracoes", id],
     queryFn: () => getAlteracoesFicha(id!),
     enabled: !!id && alteracoesExpandidas,
-  });
-
-  const visualizacoesQuery = useQuery({
-    queryKey: ["ficha-visualizacoes", id],
-    queryFn: () => getVisualizacoesFicha(id!),
-    enabled: !!id && visualizacoesExpandidas,
   });
 
   const { data: servicos = [] } = useQuery({
@@ -192,7 +202,7 @@ export default function AcompanhamentoDetalhe() {
                 <div><span className="text-muted-foreground block text-xs">Documento</span><span className="font-medium">{ficha?.cpf ?? "-"}</span></div>
                 <div className="flex flex-col gap-2">
                   <span className="text-muted-foreground block text-xs">Status</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Select
                       value={ficha?.status}
                       onValueChange={(v) => statusMutation.mutate(v as StatusFicha)}
@@ -208,10 +218,11 @@ export default function AcompanhamentoDetalhe() {
                       </SelectContent>
                     </Select>
                     <Link to={`/acompanhamentos/${id}/editar`}>
-    <Button size="sm" variant="outline" className="h-6 text-xs px-2">
-      Editar ficha
-    </Button>
-  </Link>
+                      {/* No celular a coluna é mais estreita que o texto: quebra dentro do botão em vez de vazar do card. */}
+                      <Button size="sm" variant="outline" className="h-auto min-h-6 py-0.5 text-xs px-2 whitespace-normal">
+                        Editar/Visualizar ficha
+                      </Button>
+                    </Link>
                   </div>
                 </div>
                 <div><span className="text-muted-foreground block text-xs">Nº Caso</span><span className="font-medium">{ficha?.numeroCaso ?? "-"}</span></div>
@@ -232,38 +243,15 @@ export default function AcompanhamentoDetalhe() {
         </Card>
 
         {!isLoading && ficha && (
-          <Card className="mb-4">
-            <CardHeader className="cursor-pointer select-none p-4" onClick={() => setFichaExpandida((v) => !v)}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Dados do PIA preenchidos</CardTitle>
-                {fichaExpandida ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-              </div>
-            </CardHeader>
-            {fichaExpandida && (
-              <CardContent className="p-4 pt-0 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div><span className="text-muted-foreground block text-xs">Telefone</span><span className="font-medium">{ficha.telefone ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Idade</span><span className="font-medium">{ficha.idade ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Estado Civil</span><span className="font-medium">{ficha.estadoCivil ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Pessoas Dependentes</span><span className="font-medium">{ficha.pessoasDependentes ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Idade dos Filhos</span><span className="font-medium">{ficha.idadeFilhos ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Qtd. Filhos</span><span className="font-medium">{ficha.qtdFilhos ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Nível de Segurança</span><span className="font-medium">{ficha.nivelSeguranca != null ? `${ficha.nivelSeguranca} / 5` : "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Tipo de Moradia</span><span className="font-medium">{ficha.tipoMoradia ? (tipoMoradiaLabel[ficha.tipoMoradia] ?? ficha.tipoMoradia) : "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Qtd. Moradores</span><span className="font-medium">{ficha.qtdMoradores ?? "-"}</span></div>
-              </CardContent>
-            )}
-          </Card>
-        )}
-
-        {!isLoading && ficha && (
           <Card className="mb-6">
             <CardHeader className="cursor-pointer select-none p-4" onClick={() => setAlteracoesExpandidas((v) => !v)}>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Alterações por outros profissionais</CardTitle>
+                <CardTitle className="text-sm font-semibold text-aziz-blue">Histórico de alterações</CardTitle>
                 {alteracoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </div>
               <p className="text-xs text-muted-foreground">
-                Mostra edições feitas por alguém diferente de quem criou o registro. Edições feitas pela própria autora não aparecem aqui.
+                Mostra quem alterou o caso e quando. Até {INICIO_HISTORICO_COMPLETO} só eram registradas as alterações feitas
+                por outra pessoa.
               </p>
             </CardHeader>
             {alteracoesExpandidas && (
@@ -273,54 +261,14 @@ export default function AcompanhamentoDetalhe() {
                   <p className="text-destructive">Não foi possível carregar as alterações.</p>
                 )}
                 {alteracoesQuery.data?.length === 0 && (
-                  <p className="text-muted-foreground">Nenhuma edição por outros profissionais.</p>
+                  <p className="text-muted-foreground">Nenhuma alteração registrada.</p>
                 )}
                 {alteracoesQuery.data?.map((alt) => (
-                  <div key={alt.id}>
-                    <div className="flex items-center justify-between gap-4">
-                      <span>
-                        <span className="font-medium">{alt.editorNome}</span> editou {TIPO_ALTERACAO_LABEL[alt.tipoEntidade] ?? "este caso"}
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(alt.timestamp)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">registro criado por {alt.donoNome}</p>
+                  <div key={alt.id ?? "criacao"} className="flex items-center justify-between gap-4">
+                    <span>{fraseAlteracao(alt)}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatDateTime(alt.timestamp)}</span>
                   </div>
                 ))}
-              </CardContent>
-            )}
-          </Card>
-        )}
-
-        {!isLoading && ficha && (
-          <Card className="mb-6">
-            <CardHeader className="cursor-pointer select-none p-4" onClick={() => setVisualizacoesExpandidas((v) => !v)}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Visualizações</CardTitle>
-                {visualizacoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-              </div>
-            </CardHeader>
-            {visualizacoesExpandidas && (
-              <CardContent className="p-4 pt-0 space-y-3 text-sm">
-                {visualizacoesQuery.isLoading && Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
-                {visualizacoesQuery.isError && (
-                  <p className="text-destructive">Não foi possível carregar as visualizações.</p>
-                )}
-                {visualizacoesQuery.data?.length === 0 && (
-                  <p className="text-muted-foreground">Nenhuma visualização registrada.</p>
-                )}
-                {visualizacoesQuery.data?.map((v, i) => (
-                  <div key={`${v.profissionalId}-${v.timestamp}-${i}`} className="flex items-center justify-between gap-4">
-                    <span>
-                      {v.profissionalNome ? <span className="font-medium">{v.profissionalNome}</span> : "Um usuário removido"} abriu este caso
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDateTime(v.timestamp)}</span>
-                  </div>
-                ))}
-                {visualizacoesQuery.isSuccess && (
-                  <p className="text-xs text-muted-foreground">
-                    Mostra as 200 mais recentes. Aberturas repetidas pela mesma pessoa em até 10 minutos contam uma vez.
-                  </p>
-                )}
               </CardContent>
             )}
           </Card>

@@ -136,20 +136,26 @@ export interface InteracaoRequest {
   texto: string;
 }
 
+export type AcaoAlteracao = "CRIOU" | "EDITOU" | "PREENCHEU" | "MUDOU_STATUS" | "ALTEROU_TIPOS";
+
+// Histórico do caso, do mais recente para o mais antigo. A última linha é sempre a criação
+// (acao CRIOU, id null), montada pela API a partir da ficha. Nunca traz valor de campo:
+// detalhe só vem em MUDOU_STATUS ("Ativo -> Arquivado"). editorNome é null se a conta não existe mais.
 export interface AlteracaoFicha {
-  id: number;
-  tipoEntidade: "Ficha" | "AvaliacaoSocioeconomica" | "HistoricoAtendimento" | "AcolhimentoEquipe";
+  id: number | null;
+  tipoEntidade:
+    | "Ficha"
+    | "AvaliacaoSocioeconomica"
+    | "HistoricoAtendimento"
+    | "AcolhimentoEquipe"
+    | "StatusFicha"
+    | "TiposAcompanhamento";
+  acao: AcaoAlteracao;
+  detalhe: string | null;
   editorId: number;
-  editorNome: string;
+  editorNome: string | null;
   donoId: number;
   donoNome: string;
-  timestamp: string;
-}
-
-// Uma linha por abertura do detalhe do caso. profissionalNome é null se a conta não existe mais.
-export interface VisualizacaoFicha {
-  profissionalId: number;
-  profissionalNome: string | null;
   timestamp: string;
 }
 

@@ -33,6 +33,7 @@ export default function EditarFicha() {
       queryClient.invalidateQueries({ queryKey: ["ficha", id] });
       queryClient.invalidateQueries({ queryKey: ["fichas"] });
       queryClient.invalidateQueries({ queryKey: ["acompanhamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["ficha-alteracoes", id] });
       toast.success("Ficha atualizada com sucesso!");
       navigate(`/acompanhamentos/${id}`);
     },
