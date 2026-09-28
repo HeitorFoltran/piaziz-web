@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, User, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItemsEquipe = [
   { label: "Home", path: "/" },
-  { label: "Relatórios", path: "/relatorios" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
+  { label: "Relatórios", path: "/relatorios" },
   { label: "Cadastros", path: "/cadastros" },
   { label: "Fichas pendentes", path: "/fichas-pendentes" },
   { label: "Links de preenchimento", path: "/convites" },
@@ -86,11 +86,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Link to="/login" className="group">
-            <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </button>
-          </Link>
         </div>
       </footer>
     </div>
