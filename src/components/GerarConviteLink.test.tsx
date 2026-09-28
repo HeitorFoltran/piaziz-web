@@ -38,7 +38,7 @@ beforeEach(() => {
   });
 });
 
-describe("GerarConviteLink — QR Code", () => {
+describe("GerarConviteLink - QR Code", () => {
   it("não mostra o QR antes do clique", async () => {
     renderComponente();
     await gerarLink();

@@ -51,7 +51,7 @@ export function TiposAcompanhamentoDropdown({
         <div className="absolute z-50 mt-1 w-56 rounded-md border bg-popover p-2 shadow-md">
           {catalogo.length === 0 ? (
             <p className="text-xs text-muted-foreground p-1">
-              Nenhum tipo cadastrado — cadastre em Cadastros &gt; Tipos de Acompanhamento.
+              Nenhum tipo cadastrado. Cadastre em Cadastros &gt; Tipos de Acompanhamento.
             </p>
           ) : (
             <div className="space-y-1 max-h-56 overflow-auto">

@@ -39,7 +39,7 @@ export default function Index() {
       <div className="relative overflow-hidden" style={{ background: "var(--gradient-banner)" }}>
         <div className="container py-10 relative z-10">
           <h1 className="text-2xl md:text-3xl font-bold text-primary mb-2">
-            PIA – Plano Individual de Atendimento
+            PIA - Plano Individual de Atendimento
           </h1>
           <p className="text-sm md:text-base text-primary/80 max-w-lg">
             Realizar a assistência necessária a partir do cadastro da ficha pessoal do PIA, assim iniciando um novo acompanhamento de caso.
@@ -97,7 +97,7 @@ export default function Index() {
                 {isLoading ? (
                   <Skeleton className="h-8 w-16" />
                 ) : (
-                  <p className="text-2xl font-bold text-foreground">{stat.value ?? "—"}</p>
+                  <p className="text-2xl font-bold text-foreground">{stat.value ?? "-"}</p>
                 )}
               </CardContent>
             </Card>

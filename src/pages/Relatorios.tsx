@@ -83,7 +83,7 @@ export default function Relatorios() {
                 {isLoading ? (
                   <Skeleton className="h-8 w-16 mt-2" />
                 ) : (
-                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value ?? "—"}</p>
+                  <p className="text-2xl font-bold text-foreground mt-2">{stat.value ?? "-"}</p>
                 )}
               </CardContent>
             </Card>

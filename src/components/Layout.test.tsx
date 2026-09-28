@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({ auth: { role: "PADRAO" } } as ReturnType<typeof useAuth>);
 });
 
-describe("Layout — menu no celular", () => {
+describe("Layout - menu no celular", () => {
   it("abre e fecha pelo botão", () => {
     renderLayout();
     const botao = screen.getByRole("button", { name: "Abrir menu" });

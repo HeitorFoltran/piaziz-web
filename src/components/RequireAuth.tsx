@@ -5,8 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // UX, não controle de acesso: quem barra de verdade é a API (inclusive o 403 de
 // "Troca de senha obrigatória"). Ver security.md.
-// ESTAGIARIO só tem a tela de links de preenchimento (/convites) e a de trocar senha —
-// qualquer outra rota autenticada devolve pra /convites.
+// ESTAGIARIO só tem a tela de links de preenchimento (/convites) e a de trocar senha.
+// Qualquer outra rota autenticada devolve pra /convites.
 export function RequireAuth({ children, permiteEstagiario = false }: { children: ReactNode; permiteEstagiario?: boolean }) {
   const { auth, carregando } = useAuth();
   const location = useLocation();

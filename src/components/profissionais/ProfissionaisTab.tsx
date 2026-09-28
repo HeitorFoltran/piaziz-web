@@ -120,7 +120,7 @@ export function ProfissionaisTab({ perfil }: { perfil: Perfil }) {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    @{p.username} · {p.email ?? "—"}
+                    @{p.username} · {p.email ?? "-"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     CPF: {p.cpf} · {ROLE_LABEL[p.role] ?? p.role}

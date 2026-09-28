@@ -152,7 +152,7 @@ export default function FichasPendentes() {
                 {f.status === "REJEITADA" && (
                   <p className="text-xs text-muted-foreground">
                     Rejeitada em {formatDate(f.dataRevisao)}
-                    {f.motivoRejeicao && ` — ${f.motivoRejeicao}`}
+                    {f.motivoRejeicao && `: ${f.motivoRejeicao}`}
                   </p>
                 )}
               </CardContent>

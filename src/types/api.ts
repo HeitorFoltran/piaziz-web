@@ -450,7 +450,7 @@ export type StatusConvite = "ATIVO" | "USADO" | "EXPIRADO" | "CANCELADO";
 
 export interface ConviteFicha {
   id: number;
-  /** Só vem preenchido na resposta de criação — o token cru não é recuperável depois. */
+  /** Só vem preenchido na resposta de criação. O token cru não é recuperável depois. */
   linkCompleto: string | null;
   dataCriacao: string;
   dataExpiracao: string;

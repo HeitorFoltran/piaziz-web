@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import type { FichaPublicaStatus } from "@/types/api";
 
 // Página aberta por quem recebeu o link de preenchimento, sem conta no sistema. Não usa Layout
-// (nav/menu do app autenticado) nem toast — tudo que aparece aqui é só desta página.
+// (nav/menu do app autenticado) nem toast. Tudo que aparece aqui é só desta página.
 
 const MENSAGEM_LINK_INVALIDO: Record<NonNullable<FichaPublicaStatus["motivo"]>, string> = {
   expirado: "Este link expirou. Se ainda precisar de atendimento, peça um novo link a quem enviou este.",
@@ -69,7 +69,7 @@ export default function FichaPublica() {
   const envio = useMutation({
     mutationFn: () => {
       return submitFichaPublica(token, {
-        // numeroCaso/status são da equipe — ficam fora do payload (o backend zera de qualquer jeito).
+        // numeroCaso/status são da equipe, ficam fora do payload (o backend zera de qualquer jeito).
         ficha: { ...fichaFormToRequest(ficha, ""), numeroCaso: undefined, status: undefined },
         avaliacao: avaliacaoFormToRequest(avaliacao),
         historico: historicoFormToRequest(historico),
@@ -143,7 +143,7 @@ export default function FichaPublica() {
     <Moldura largo>
       <h1 className="mb-1 text-center text-xl font-semibold text-foreground">Solicitar atendimento</h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">
-        Só nome e CPF são obrigatórios — responda o que se sentir à vontade. Só a equipe de
+        Só nome e CPF são obrigatórios. Responda o que se sentir à vontade. Só a equipe de
         atendimento terá acesso a essas informações.
       </p>
 

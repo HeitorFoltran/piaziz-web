@@ -7,7 +7,7 @@ interface TiposAcompanhamentoTagsProps {
   emptyLabel?: string;
 }
 
-export function TiposAcompanhamentoTags({ tipos, emptyLabel = "—" }: TiposAcompanhamentoTagsProps) {
+export function TiposAcompanhamentoTags({ tipos, emptyLabel = "-" }: TiposAcompanhamentoTagsProps) {
   if (tipos.length === 0) {
     return <span className="text-muted-foreground text-xs">{emptyLabel}</span>;
   }

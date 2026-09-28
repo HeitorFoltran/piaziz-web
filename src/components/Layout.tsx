@@ -13,7 +13,7 @@ const navItemsEquipe = [
   { label: "Links de preenchimento", path: "/convites" },
 ];
 
-// ESTAGIARIO não revisa fichas nem vê casos — o nav dele só linka a tela de links de preenchimento.
+// ESTAGIARIO não revisa fichas nem vê casos. O nav dele só linka a tela de links de preenchimento.
 const navItemsEstagiario = [{ label: "Links de preenchimento", path: "/convites" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

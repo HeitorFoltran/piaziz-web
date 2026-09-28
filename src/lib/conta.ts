@@ -1,6 +1,6 @@
 import type { RoleProfissional } from "@/types/api";
 
-// Espelham as regras do backend (ProfissionalService / AuthService) — só para feedback
+// Espelham as regras do backend (ProfissionalService / AuthService), só para feedback
 // imediato no formulário. Quem garante é a API.
 export const USERNAME_REGEX = /^[a-z0-9._-]{3,30}$/;
 export const SENHA_MIN = 8;
