@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AcompanhamentoDetalhe from "./AcompanhamentoDetalhe";
-import { getAlteracoesFicha, getFicha, getTiposAcompanhamento, getVisualizacoesFicha } from "@/lib/api";
+import { getAlteracoesFicha, getFicha, getTiposAcompanhamento } from "@/lib/api";
 import type { AlteracaoFicha, Ficha } from "@/types/api";
 
 vi.mock("@/lib/api");
@@ -111,38 +111,10 @@ describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => 
   });
 });
 
-describe("AcompanhamentoDetalhe - visualizações", () => {
-  async function abrirVisualizacoes() {
-    fireEvent.click(await screen.findByText("Visualizações"));
-  }
-
-  it("não busca as visualizações enquanto a seção está fechada", async () => {
+describe("AcompanhamentoDetalhe - cards removidos", () => {
+  it("não mostra o card de visualizações", async () => {
     renderPagina();
-    expect(await screen.findByText("Visualizações")).toBeInTheDocument();
-    expect(getVisualizacoesFicha).not.toHaveBeenCalled();
-  });
-
-  it("ao abrir, lista quem abriu o caso e quando", async () => {
-    vi.mocked(getVisualizacoesFicha).mockResolvedValue([
-      { profissionalId: 2, profissionalNome: "Ana", timestamp: "2026-09-25T14:30:00" },
-      { profissionalId: 3, profissionalNome: null, timestamp: "2026-09-20T09:05:00" },
-    ]);
-    renderPagina();
-    await abrirVisualizacoes();
-
-    expect(await screen.findByText("Ana")).toBeInTheDocument();
-    expect(screen.getByText("25/09/2026 14:30")).toBeInTheDocument();
-    expect(screen.getByText(/Um usuário removido abriu este caso/)).toBeInTheDocument();
-    expect(screen.getByText("20/09/2026 09:05")).toBeInTheDocument();
-    expect(screen.getByText(/Mostra as 200 mais recentes/)).toBeInTheDocument();
-    expect(getVisualizacoesFicha).toHaveBeenCalledWith("7");
-  });
-
-  it("ao abrir, com lista vazia, mostra o texto de vazio", async () => {
-    vi.mocked(getVisualizacoesFicha).mockResolvedValue([]);
-    renderPagina();
-    await abrirVisualizacoes();
-
-    expect(await screen.findByText("Nenhuma visualização registrada.")).toBeInTheDocument();
+    expect(await screen.findByText("F-007")).toBeInTheDocument();
+    expect(screen.queryByText("Visualizações")).not.toBeInTheDocument();
   });
 });

@@ -13,8 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha, getVisualizacoesFicha } from "@/lib/api";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha } from "@/lib/api";
+import { formatDate } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
 import type { AlteracaoFicha, EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
@@ -52,7 +52,6 @@ export default function AcompanhamentoDetalhe() {
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
   const [alteracoesExpandidas, setAlteracoesExpandidas] = useState(false);
-  const [visualizacoesExpandidas, setVisualizacoesExpandidas] = useState(false);
 
   const { data: ficha, isLoading, isError, error } = useQuery({
     queryKey: ["ficha", id],
@@ -64,12 +63,6 @@ export default function AcompanhamentoDetalhe() {
     queryKey: ["ficha-alteracoes", id],
     queryFn: () => getAlteracoesFicha(id!),
     enabled: !!id && alteracoesExpandidas,
-  });
-
-  const visualizacoesQuery = useQuery({
-    queryKey: ["ficha-visualizacoes", id],
-    queryFn: () => getVisualizacoesFicha(id!),
-    enabled: !!id && visualizacoesExpandidas,
   });
 
   const { data: servicos = [] } = useQuery({
@@ -253,41 +246,6 @@ export default function AcompanhamentoDetalhe() {
                     <p className="text-xs text-muted-foreground">registro criado por {alt.donoNome}</p>
                   </div>
                 ))}
-              </CardContent>
-            )}
-          </Card>
-        )}
-
-        {!isLoading && ficha && (
-          <Card className="mb-6">
-            <CardHeader className="cursor-pointer select-none p-4" onClick={() => setVisualizacoesExpandidas((v) => !v)}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Visualizações</CardTitle>
-                {visualizacoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-              </div>
-            </CardHeader>
-            {visualizacoesExpandidas && (
-              <CardContent className="p-4 pt-0 space-y-3 text-sm">
-                {visualizacoesQuery.isLoading && Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-6 w-full" />)}
-                {visualizacoesQuery.isError && (
-                  <p className="text-destructive">Não foi possível carregar as visualizações.</p>
-                )}
-                {visualizacoesQuery.data?.length === 0 && (
-                  <p className="text-muted-foreground">Nenhuma visualização registrada.</p>
-                )}
-                {visualizacoesQuery.data?.map((v, i) => (
-                  <div key={`${v.profissionalId}-${v.timestamp}-${i}`} className="flex items-center justify-between gap-4">
-                    <span>
-                      {v.profissionalNome ? <span className="font-medium">{v.profissionalNome}</span> : "Um usuário removido"} abriu este caso
-                    </span>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDateTime(v.timestamp)}</span>
-                  </div>
-                ))}
-                {visualizacoesQuery.isSuccess && (
-                  <p className="text-xs text-muted-foreground">
-                    Mostra as 200 mais recentes. Aberturas repetidas pela mesma pessoa em até 10 minutos contam uma vez.
-                  </p>
-                )}
               </CardContent>
             )}
           </Card>
