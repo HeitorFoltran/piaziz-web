@@ -93,7 +93,7 @@ beforeEach(() => {
   vi.mocked(createProfissional).mockResolvedValue(profissional({}));
 });
 
-describe("Cadastros — aba Profissionais", () => {
+describe("Cadastros - aba Profissionais", () => {
   it("não aparece sem a permissão, nem abrindo ?tab=profissionais direto", async () => {
     renderEm("/cadastros?tab=profissionais", perfil({ podeGerenciarProfissionais: false }));
     expect(screen.queryByRole("button", { name: "Profissionais" })).not.toBeInTheDocument();
@@ -112,7 +112,7 @@ describe("Cadastros — aba Profissionais", () => {
       profissional({ ativo: false, podeGerenciarProfissionais: true, deveTrocarSenha: true }),
     ]);
     renderEm("/cadastros?tab=profissionais", perfil());
-    expect(await screen.findByText(/@carlos\.mendes · —/)).toBeInTheDocument();
+    expect(await screen.findByText(/@carlos\.mendes · -/)).toBeInTheDocument();
     expect(screen.getByText("Inativa")).toBeInTheDocument();
     expect(screen.getByText("Gerencia profissionais")).toBeInTheDocument();
     expect(screen.getByText("Senha provisória pendente")).toBeInTheDocument();
@@ -214,7 +214,7 @@ describe("Cadastros — aba Profissionais", () => {
   });
 });
 
-describe("Cadastros — histórico de uma conta", () => {
+describe("Cadastros - histórico de uma conta", () => {
   async function abrirHistorico() {
     vi.mocked(getProfissionais).mockResolvedValue([profissional({ id: 2, nome: "Carlos", role: "DEV" })]);
     renderEm("/cadastros?tab=profissionais", perfil());

@@ -132,14 +132,14 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (!response.ok) {
     let detail = "";
     try { detail = await response.text(); } catch {
-      // corpo da resposta não é texto legível — segue sem detalhe
+      // corpo da resposta não é texto legível, segue sem detalhe
     }
     let mensagemApi: string | undefined;
     try {
       const corpo = JSON.parse(detail);
       if (typeof corpo?.message === "string") mensagemApi = corpo.message;
     } catch {
-      // corpo não é JSON — fica só o detalhe cru
+      // corpo não é JSON, fica só o detalhe cru
     }
     throw new ApiError(
       `Erro ${response.status} ao acessar ${path}` + (detail ? `: ${detail}` : ""),
@@ -184,7 +184,7 @@ export function createFicha(body: FichaRequest): Promise<Ficha> {
 
 export function atualizarStatusFicha(
   id: number | string,
-  status: "ATIVO" | "PAUSADO" | "ENCERRADO",
+  status: "ATIVO" | "PAUSADO" | "ARQUIVADO",
 ): Promise<Ficha> {
   return request<Ficha>(`/api/fichas/${id}/status?status=${status}`, { method: "PATCH" });
 }
@@ -384,7 +384,7 @@ export function rejeitarFichaPendente(id: number, motivo?: string): Promise<Fich
 
 // Rotas públicas do link de intake. Não passam pelo request(): o visitante não tem
 // conta, e se houver um token de profissional em memória na mesma aba ele não pode
-// ir junto. O erro é sempre genérico — nem o token nem o corpo da resposta vão pra
+// ir junto. O erro é sempre genérico: nem o token nem o corpo da resposta vão pra
 // mensagem, que é exibida pra quem está do outro lado do link.
 async function publicRequest<T>(path: string, options?: RequestInit): Promise<T> {
   let response: Response;

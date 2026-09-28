@@ -35,10 +35,10 @@ const TIPOS_VIOLENCIA = [
 ];
 
 const CATEGORIAS_CLASSIFICACAO = [
-  { v: "CATEGORIA_1", l: "Categoria 1 – Mulheres com trabalho adequado" },
-  { v: "CATEGORIA_2", l: "Categoria 2 – Sem trabalho adequado, com condições de trabalhar" },
-  { v: "CATEGORIA_3", l: "Categoria 3 – Sem trabalho adequado e sem condições de trabalhar" },
-  { v: "CATEGORIA_4", l: "Categoria 4 – Vítimas de crimes sexuais" },
+  { v: "CATEGORIA_1", l: "Categoria 1 - Mulheres com trabalho adequado" },
+  { v: "CATEGORIA_2", l: "Categoria 2 - Sem trabalho adequado, com condições de trabalhar" },
+  { v: "CATEGORIA_3", l: "Categoria 3 - Sem trabalho adequado e sem condições de trabalhar" },
+  { v: "CATEGORIA_4", l: "Categoria 4 - Vítimas de crimes sexuais" },
 ];
 
 export interface FichaFormSubmitData {

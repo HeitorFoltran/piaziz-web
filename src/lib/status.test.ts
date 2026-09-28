@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, statusConviteExibido, type StatusFicha } from "./status";
 
-const statuses: StatusFicha[] = ["ATIVO", "PAUSADO", "ENCERRADO"];
+const statuses: StatusFicha[] = ["ATIVO", "PAUSADO", "ARQUIVADO"];
 
 describe("STATUS_LABEL", () => {
   it.each(statuses)("tem label definido para %s", (status) => {

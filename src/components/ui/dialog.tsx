@@ -10,7 +10,7 @@ export const DialogPortal = DialogPrimitive.Portal;
 export const DialogClose = DialogPrimitive.Close;
 
 // Exceção à regra do Tier C: o Radix passa um ref para o Overlay (via Slot, no RemoveScroll),
-// então aqui o forwardRef é necessário — sem ele, todo dialog gera
+// então aqui o forwardRef é necessário. Sem ele, todo dialog gera
 // "Function components cannot be given refs" no console.
 export const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,

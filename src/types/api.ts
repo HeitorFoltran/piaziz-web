@@ -450,7 +450,12 @@ export type StatusConvite = "ATIVO" | "USADO" | "EXPIRADO" | "CANCELADO";
 
 export interface ConviteFicha {
   id: number;
-  /** Só vem preenchido na resposta de criação — o token cru não é recuperável depois. */
+  criadoPorId: number;
+  criadoPorNome: string | null;
+  /**
+   * Vem preenchido na criação e na lista enquanto o convite está ativo e no prazo. Vem null
+   * quando o link já foi usado, expirou, foi cancelado ou foi criado antes do lote 4.
+   */
   linkCompleto: string | null;
   dataCriacao: string;
   dataExpiracao: string;

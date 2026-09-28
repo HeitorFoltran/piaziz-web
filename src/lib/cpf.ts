@@ -1,4 +1,4 @@
-// Espelha CpfUtils.isValido do backend — só pra feedback imediato no formulário,
+// Espelha CpfUtils.isValido do backend, só pra feedback imediato no formulário,
 // quem decide de verdade é o servidor.
 export function isCpfValido(cpf: string): boolean {
   const digitos = cpf.replace(/\D/g, "");

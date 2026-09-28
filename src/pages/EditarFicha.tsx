@@ -70,7 +70,7 @@ export default function EditarFicha() {
 
         <h1 className="text-2xl font-bold text-foreground mb-1">Editar Ficha PIA</h1>
         <p className="text-sm text-muted-foreground mb-8">
-          Ficha {ficha.codigoFicha} — {ficha.nome}
+          Ficha {ficha.codigoFicha} - {ficha.nome}
         </p>
 
         <FichaForm

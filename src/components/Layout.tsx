@@ -1,19 +1,19 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, User, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItemsEquipe = [
   { label: "Home", path: "/" },
-  { label: "Relatórios", path: "/relatorios" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
+  { label: "Relatórios", path: "/relatorios" },
   { label: "Cadastros", path: "/cadastros" },
   { label: "Fichas pendentes", path: "/fichas-pendentes" },
   { label: "Links de preenchimento", path: "/convites" },
 ];
 
-// ESTAGIARIO não revisa fichas nem vê casos — o nav dele só linka a tela de links de preenchimento.
+// ESTAGIARIO não revisa fichas nem vê casos. O nav dele só linka a tela de links de preenchimento.
 const navItemsEstagiario = [{ label: "Links de preenchimento", path: "/convites" }];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -37,9 +37,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col bg-background">
       <header className="bg-card border-b border-border sticky top-0 z-50">
         <div className="container flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-1">
-            <span className="font-logo text-2xl font-black tracking-tight text-primary">AZIZ</span>
-            <span className="text-xs text-muted-foreground font-medium hidden sm:inline">defensoria</span>
+          <Link to="/" className="flex items-center">
+            <span className="font-logo text-2xl font-black tracking-tight text-primary">PIAZIZ</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-1">
             {navItems.map((item) => (
@@ -77,9 +76,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="bg-primary text-primary-foreground py-6 mt-auto">
         <div className="container flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-logo text-xl font-black">AZIZ</span>
-            <span className="text-xs opacity-70">defensoria</span>
+          <div className="flex items-center">
+            <span className="font-logo text-xl font-black">PIAZIZ</span>
           </div>
           <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm opacity-80">
             {navItems.map((item) => (
@@ -88,11 +86,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <Link to="/login" className="group">
-            <button className="w-8 h-8 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <User className="w-4 h-4" />
-            </button>
-          </Link>
         </div>
       </footer>
     </div>

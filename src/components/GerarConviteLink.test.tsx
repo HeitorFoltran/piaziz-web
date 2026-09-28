@@ -30,6 +30,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(criarConviteFicha).mockResolvedValue({
     id: 1,
+    criadoPorId: 1,
+    criadoPorNome: "Ana",
     linkCompleto: "https://exemplo.test/ficha-publica/abc123",
     dataCriacao: "2026-09-27T10:00:00",
     dataExpiracao: "2026-10-04T10:00:00",
@@ -38,7 +40,7 @@ beforeEach(() => {
   });
 });
 
-describe("GerarConviteLink — QR Code", () => {
+describe("GerarConviteLink - QR Code", () => {
   it("não mostra o QR antes do clique", async () => {
     renderComponente();
     await gerarLink();

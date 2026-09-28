@@ -181,7 +181,7 @@ export const emptyHistoricoForm: HistoricoFormState = {
   reacaoAgressor: "",
 };
 
-// Aceita tanto a resposta (campos `| null`) quanto o request (campos opcionais) — a
+// Aceita tanto a resposta (campos `| null`) quanto o request (campos opcionais): a
 // revisão de fichas pendentes preenche o formulário a partir dos DTOs de request.
 type Nullable<T> = { [K in keyof T]?: T[K] | null };
 

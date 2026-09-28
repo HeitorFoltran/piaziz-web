@@ -334,8 +334,8 @@ export default function AcompanhamentoDetalhe() {
                 size="sm"
                 className="bg-aziz-green hover:bg-aziz-green/90 text-primary-foreground"
                 onClick={() => setEncModalOpen(true)}
-                disabled={ficha?.status === "ENCERRADO"}
-                title={ficha?.status === "ENCERRADO" ? "Reative o acompanhamento para novos encaminhamentos" : undefined}
+                disabled={ficha?.status === "ARQUIVADO"}
+                title={ficha?.status === "ARQUIVADO" ? "Reative o acompanhamento para novos encaminhamentos" : undefined}
               >
                 <Plus className="w-4 h-4 mr-1" /> Novo Encaminhamento
               </Button>

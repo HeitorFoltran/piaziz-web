@@ -15,7 +15,7 @@ export interface Perfil {
 
 interface AuthContextValue {
   auth: Perfil | null;
-  /** true entre um token novo e a resposta do /me — não redirecionar nesse intervalo. */
+  /** true entre um token novo e a resposta do /me: não redirecionar nesse intervalo. */
   carregando: boolean;
 }
 

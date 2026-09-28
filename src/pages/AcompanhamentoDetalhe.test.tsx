@@ -59,7 +59,7 @@ beforeEach(() => {
   vi.mocked(getTiposAcompanhamento).mockResolvedValue([]);
 });
 
-describe("AcompanhamentoDetalhe — alterações por outros profissionais", () => {
+describe("AcompanhamentoDetalhe - alterações por outros profissionais", () => {
   it("não busca as alterações enquanto a seção está fechada", async () => {
     renderPagina();
     expect(await screen.findByText("Alterações por outros profissionais")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("AcompanhamentoDetalhe — alterações por outros profissionais", () =
   });
 });
 
-describe("AcompanhamentoDetalhe — visualizações", () => {
+describe("AcompanhamentoDetalhe - visualizações", () => {
   async function abrirVisualizacoes() {
     fireEvent.click(await screen.findByText("Visualizações"));
   }

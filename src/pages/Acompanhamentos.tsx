@@ -19,7 +19,7 @@ const statusOptions = [
   { value: "all", label: "Todos os status" },
   { value: "ATIVO", label: STATUS_LABEL.ATIVO },
   { value: "PAUSADO", label: STATUS_LABEL.PAUSADO },
-  { value: "ENCERRADO", label: STATUS_LABEL.ENCERRADO },
+  { value: "ARQUIVADO", label: STATUS_LABEL.ARQUIVADO },
 ];
 
 type CampoData = "dataAtualizacao" | "dataCriacao";
@@ -108,7 +108,7 @@ export default function Acompanhamentos() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3 mt-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-3">
               <Select value={campoData} onValueChange={(v) => setCampoData(v as CampoData)}>
                 <SelectTrigger className="w-full sm:w-[200px]" aria-label="Campo de data">
                   <SelectValue />
@@ -121,13 +121,25 @@ export default function Acompanhamentos() {
               {/* min-w-0: o input de data nativo tem largura mínima intrínseca e vaza do card sem isso.
                   Abaixo de 400px nem assim cabe lado a lado, então empilha. */}
               <div className="flex flex-col min-[400px]:flex-row gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
-                  <Label htmlFor="filtro-data-de" className="text-xs">De</Label>
-                  <Input id="filtro-data-de" type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} />
+                <div className="flex flex-1 min-w-0 items-center gap-2">
+                  <Label htmlFor="filtro-data-de" className="text-xs shrink-0">De</Label>
+                  <Input
+                    id="filtro-data-de"
+                    type="date"
+                    className="min-w-0"
+                    value={dataDe}
+                    onChange={(e) => setDataDe(e.target.value)}
+                  />
                 </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <Label htmlFor="filtro-data-ate" className="text-xs">Até</Label>
-                  <Input id="filtro-data-ate" type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} />
+                <div className="flex flex-1 min-w-0 items-center gap-2">
+                  <Label htmlFor="filtro-data-ate" className="text-xs shrink-0">Até</Label>
+                  <Input
+                    id="filtro-data-ate"
+                    type="date"
+                    className="min-w-0"
+                    value={dataAte}
+                    onChange={(e) => setDataAte(e.target.value)}
+                  />
                 </div>
               </div>
               {(dataDe || dataAte) && (

@@ -31,7 +31,7 @@ beforeEach(() => {
   vi.mocked(listarFichasPendentes).mockResolvedValue([]);
 });
 
-describe("FichasPendentes — aviso de retenção", () => {
+describe("FichasPendentes - aviso de retenção", () => {
   it("não mostra aviso na aba Pendente", async () => {
     renderPagina();
     await screen.findByText("Nenhuma ficha pendente.");

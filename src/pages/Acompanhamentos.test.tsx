@@ -74,7 +74,7 @@ beforeEach(() => {
   vi.mocked(getServicos).mockResolvedValue([]);
 });
 
-describe("Acompanhamentos — filtro por data", () => {
+describe("Acompanhamentos - filtro por data", () => {
   it("filtra por data de criação com intervalo inclusivo nas bordas", async () => {
     renderPagina();
     await screen.findByText("Maria");

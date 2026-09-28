@@ -11,12 +11,12 @@ import type { AvaliacaoFormState, FichaFormState, HistoricoFormState } from "@/c
 
 
 const NIVEIS_SEGURANCA = [
-  { v: "0", l: "0 – Não me sinto segura de forma alguma" },
-  { v: "1", l: "1 – Me sinto muito pouco segura" },
-  { v: "2", l: "2 – Me sinto um pouco segura em alguns momentos" },
-  { v: "3", l: "3 – Me sinto segura em vários momentos" },
-  { v: "4", l: "4 – Segura" },
-  { v: "5", l: "5 – Muito segura" },
+  { v: "0", l: "0 - Não me sinto segura de forma alguma" },
+  { v: "1", l: "1 - Me sinto muito pouco segura" },
+  { v: "2", l: "2 - Me sinto um pouco segura em alguns momentos" },
+  { v: "3", l: "3 - Me sinto segura em vários momentos" },
+  { v: "4", l: "4 - Segura" },
+  { v: "5", l: "5 - Muito segura" },
 ];
 
 const TIPOS_MORADIA = [

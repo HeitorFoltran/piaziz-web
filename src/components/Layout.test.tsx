@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.mocked(useAuth).mockReturnValue({ auth: { role: "PADRAO" } } as ReturnType<typeof useAuth>);
 });
 
-describe("Layout — menu no celular", () => {
+describe("Layout - menu no celular", () => {
   it("abre e fecha pelo botão", () => {
     renderLayout();
     const botao = screen.getByRole("button", { name: "Abrir menu" });
@@ -57,5 +57,29 @@ describe("Layout — menu no celular", () => {
 
     const links = within(document.getElementById("menu-celular")!).getAllByRole("link");
     expect(links.map((l) => l.textContent)).toEqual(["Links de preenchimento"]);
+  });
+
+  it("PADRAO vê as seis abas na ordem certa", () => {
+    renderLayout();
+    fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
+
+    const links = within(document.getElementById("menu-celular")!).getAllByRole("link");
+    expect(links.map((l) => l.textContent)).toEqual([
+      "Home",
+      "Acompanhamentos",
+      "Relatórios",
+      "Cadastros",
+      "Fichas pendentes",
+      "Links de preenchimento",
+    ]);
+  });
+});
+
+describe("Layout - rodapé", () => {
+  it("não tem link para /login", () => {
+    renderLayout();
+    const links = within(screen.getByRole("contentinfo")).queryAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.filter((l) => l.getAttribute("href")?.endsWith("/login"))).toEqual([]);
   });
 });
