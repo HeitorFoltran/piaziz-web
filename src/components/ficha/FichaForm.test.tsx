@@ -12,11 +12,15 @@ function renderForm(props: Partial<React.ComponentProps<typeof FichaForm>> = {})
     </MemoryRouter>,
   );
   const salvar = () => {
-    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    fireEvent.click(screen.getByText("Salvar"));
     return onSubmit.mock.calls[onSubmit.mock.calls.length - 1][0];
   };
   return { onSubmit, salvar };
 }
+
+// getByRole/getByLabelText no formulário inteiro (~100 campos) levam segundos cada: consultar só a seção.
+const secao = (titulo: string) => within(screen.getByText(titulo).parentElement!);
+const precisoAgora = () => secao("11. O que eu preciso agora");
 
 describe("FichaForm - Parte A", () => {
   it("pergunta se tem com quem deixar os filhos, não se eles precisam de supervisão", () => {
@@ -27,15 +31,15 @@ describe("FichaForm - Parte A", () => {
 
   it("mostra o campo do Outro só com OUTRO marcado e não manda a descrição sem ele", () => {
     const { salvar } = renderForm();
-    expect(screen.queryByLabelText("Outro, qual?")).not.toBeInTheDocument();
+    expect(precisoAgora().queryByLabelText("Outro, qual?")).not.toBeInTheDocument();
 
-    const outro = screen.getByRole("checkbox", { name: "Outro" });
+    const outro = precisoAgora().getByRole("checkbox", { name: "Outro" });
     fireEvent.click(outro);
-    fireEvent.change(screen.getByLabelText("Outro, qual?"), { target: { value: "Documentos" } });
+    fireEvent.change(precisoAgora().getByLabelText("Outro, qual?"), { target: { value: "Documentos" } });
     expect(salvar().ficha).toMatchObject({ necessidadesImediatas: ["OUTRO"], necessidadeOutraDescricao: "Documentos" });
 
     fireEvent.click(outro);
-    expect(screen.queryByLabelText("Outro, qual?")).not.toBeInTheDocument();
+    expect(precisoAgora().queryByLabelText("Outro, qual?")).not.toBeInTheDocument();
     const { ficha } = salvar();
     expect(ficha.necessidadesImediatas).toEqual([]);
     expect(ficha.necessidadeOutraDescricao).toBeUndefined();
@@ -45,14 +49,14 @@ describe("FichaForm - Parte A", () => {
     renderForm({
       initialFicha: fichaToFormState({ nome: "Maria", cpf: "", necessidadesImediatas: ["APOIO_MORADIA"], necessidadeOutraDescricao: "Documentos" }),
     });
-    expect(screen.getByRole("checkbox", { name: "Outro" })).toBeChecked();
-    expect(screen.getByLabelText("Outro, qual?")).toHaveValue("Documentos");
+    expect(precisoAgora().getByRole("checkbox", { name: "Outro" })).toBeChecked();
+    expect(precisoAgora().getByLabelText("Outro, qual?")).toHaveValue("Documentos");
   });
 });
 
 describe("FichaForm - Parte B", () => {
-  // A Parte A também tem campos "Qual?": as consultas ficam restritas à linha do serviço.
-  const linhaDe = (servico: string) => within(screen.getByText(servico).parentElement!);
+  // A Parte A também tem campos "Qual?": as consultas ficam na linha do serviço.
+  const linhaDe = secao;
 
   it("grava a sugestão de Habitação com o Qual?", () => {
     const { salvar } = renderForm();
@@ -61,7 +65,7 @@ describe("FichaForm - Parte B", () => {
 
     fireEvent.click(habitacao.getByRole("radio", { name: "Sim" }));
     fireEvent.change(habitacao.getByLabelText("Qual?"), { target: { value: "Aluguel social" } });
-    fireEvent.change(screen.getByLabelText("Outro encaminhamento"), { target: { value: "Defensoria" } });
+    fireEvent.change(secao("6. Encaminhamentos sugeridos").getByLabelText("Outro encaminhamento"), { target: { value: "Defensoria" } });
 
     expect(salvar().acolhimento).toMatchObject({
       sugereHabitacao: true,
