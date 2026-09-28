@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFicha, createInteracao, createEncaminhamento, atualizarStatusFicha, getServicos, atribuirTiposAcompanhamento, getTiposAcompanhamento, getAlteracoesFicha } from "@/lib/api";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime } from "@/lib/format";
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 import { toast } from "sonner";
 import type { AlteracaoFicha, EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
@@ -38,12 +38,38 @@ const categoriaEncaminhamentoLabel: Record<string, string> = {
   OUTRO: "Outro",
 };
 
+// Antes do lote 5 a API só gravava alterações feitas por alguém diferente de quem criou o
+// registro. Ajustar para a data em que o lote 5 entrar em produção.
+const INICIO_HISTORICO_COMPLETO = "28/09/2026";
+
+// StatusFicha e TiposAcompanhamento têm frase própria (MUDOU_STATUS / ALTEROU_TIPOS), mas ficam
+// aqui para o Record cobrir todos os tipos.
 const TIPO_ALTERACAO_LABEL: Record<AlteracaoFicha["tipoEntidade"], string> = {
   Ficha: "os dados da ficha",
   AvaliacaoSocioeconomica: "a avaliação socioeconômica",
   HistoricoAtendimento: "o histórico de atendimento",
   AcolhimentoEquipe: "o acolhimento da equipe",
+  StatusFicha: "o status",
+  TiposAcompanhamento: "os tipos de acompanhamento",
 };
+
+function fraseAlteracao(alt: AlteracaoFicha) {
+  if (alt.acao === "CRIOU" && !alt.editorNome) return "Caso criado";
+  const nome = alt.editorNome ? <span className="font-medium">{alt.editorNome}</span> : "Um usuário removido";
+  const parte = TIPO_ALTERACAO_LABEL[alt.tipoEntidade] ?? "este caso";
+  switch (alt.acao) {
+    case "CRIOU":
+      return <>{nome} criou o caso</>;
+    case "PREENCHEU":
+      return <>{nome} preencheu {parte}</>;
+    case "MUDOU_STATUS":
+      return <>{nome} mudou o status: {alt.detalhe}</>;
+    case "ALTEROU_TIPOS":
+      return <>{nome} alterou os tipos de acompanhamento</>;
+    default:
+      return <>{nome} editou {parte}</>;
+  }
+}
 
 export default function AcompanhamentoDetalhe() {
   const { id } = useParams();
@@ -219,11 +245,12 @@ export default function AcompanhamentoDetalhe() {
           <Card className="mb-6">
             <CardHeader className="cursor-pointer select-none p-4" onClick={() => setAlteracoesExpandidas((v) => !v)}>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Alterações por outros profissionais</CardTitle>
+                <CardTitle className="text-sm font-semibold text-aziz-blue">Histórico de alterações</CardTitle>
                 {alteracoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </div>
               <p className="text-xs text-muted-foreground">
-                Mostra edições feitas por alguém diferente de quem criou o registro. Edições feitas pela própria autora não aparecem aqui.
+                Mostra quem alterou o caso e quando. Até {INICIO_HISTORICO_COMPLETO} só eram registradas as alterações feitas
+                por outra pessoa.
               </p>
             </CardHeader>
             {alteracoesExpandidas && (
@@ -233,17 +260,12 @@ export default function AcompanhamentoDetalhe() {
                   <p className="text-destructive">Não foi possível carregar as alterações.</p>
                 )}
                 {alteracoesQuery.data?.length === 0 && (
-                  <p className="text-muted-foreground">Nenhuma edição por outros profissionais.</p>
+                  <p className="text-muted-foreground">Nenhuma alteração registrada.</p>
                 )}
                 {alteracoesQuery.data?.map((alt) => (
-                  <div key={alt.id}>
-                    <div className="flex items-center justify-between gap-4">
-                      <span>
-                        <span className="font-medium">{alt.editorNome}</span> editou {TIPO_ALTERACAO_LABEL[alt.tipoEntidade] ?? "este caso"}
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(alt.timestamp)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">registro criado por {alt.donoNome}</p>
+                  <div key={alt.id ?? "criacao"} className="flex items-center justify-between gap-4">
+                    <span>{fraseAlteracao(alt)}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatDateTime(alt.timestamp)}</span>
                   </div>
                 ))}
               </CardContent>
