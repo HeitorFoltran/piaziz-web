@@ -218,6 +218,8 @@ const fromNum = (v: number | null | undefined): string => (v == null ? "" : Stri
 const fromStr = (v: string | null | undefined): string => v ?? "";
 
 export function fichaToFormState(f: Ficha | Nullable<FichaRequest>): FichaFormState {
+  const necessidadesImediatas: string[] = f.necessidadesImediatas ?? [];
+  const necessidadeOutraDescricao = fromStr(f.necessidadeOutraDescricao);
   return {
     nome: f.nome ?? "",
     cpf: f.cpf ?? "",
@@ -235,8 +237,12 @@ export function fichaToFormState(f: Ficha | Nullable<FichaRequest>): FichaFormSt
     ondeMoramFilhos: f.ondeMoramFilhos ?? "",
     supervisaoFilhos: f.supervisaoFilhos ?? "",
     vagasNecessarias: f.vagasNecessarias ?? [],
-    necessidadesImediatas: f.necessidadesImediatas ?? [],
-    necessidadeOutraDescricao: fromStr(f.necessidadeOutraDescricao),
+    // Fichas antigas gravavam só a descrição, sem OUTRO: marca para o texto não sumir da tela.
+    necessidadesImediatas:
+      necessidadeOutraDescricao.trim() && !necessidadesImediatas.includes("OUTRO")
+        ? [...necessidadesImediatas, "OUTRO"]
+        : necessidadesImediatas,
+    necessidadeOutraDescricao,
   };
 }
 
@@ -259,7 +265,8 @@ export function fichaFormToRequest(form: FichaFormState, status: string): FichaR
     supervisaoFilhos: (form.supervisaoFilhos || undefined) as FichaRequest["supervisaoFilhos"],
     vagasNecessarias: form.vagasNecessarias as FichaRequest["vagasNecessarias"],
     necessidadesImediatas: form.necessidadesImediatas as FichaRequest["necessidadesImediatas"],
-    necessidadeOutraDescricao: form.necessidadeOutraDescricao || undefined,
+    // Sem OUTRO marcado a descrição não vai: a API marcaria OUTRO de novo ao recebê-la.
+    necessidadeOutraDescricao: form.necessidadesImediatas.includes("OUTRO") ? form.necessidadeOutraDescricao || undefined : undefined,
     status,
   };
 }

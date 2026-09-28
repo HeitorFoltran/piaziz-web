@@ -22,7 +22,7 @@ const NIVEIS_SEGURANCA = [
 const TIPOS_MORADIA = [
   { v: "CASA_PROPRIA", l: "Casa própria" },
   { v: "ALUGADA", l: "Casa alugada" },
-  { v: "CEDIDA", l: "Casa cedida (emprestada)" },
+  { v: "CEDIDA", l: "Casa cedida (emprestada por alguém)" },
   { v: "ABRIGO", l: "Abrigo temporário" },
   { v: "OUTRO", l: "Outro" },
 ];
@@ -45,7 +45,7 @@ const VAGAS_NECESSARIAS = [
   { v: "CRECHE", l: "Creche" },
   { v: "ESCOLA", l: "Escola" },
   { v: "ATENDIMENTO_PSICOSSOCIAL", l: "Atendimento Psicossocial" },
-  { v: "NAO_PRECISA", l: "Não precisa" },
+  { v: "NAO_PRECISA", l: "Não precisa de atendimento" },
 ];
 
 const PERIODOS_TRABALHO = [
@@ -75,11 +75,19 @@ const NECESSIDADES_IMEDIATAS = [
   { v: "ATENDIMENTO_ASSISTENCIA_SOCIAL", l: "Atendimento da assistência social" },
   { v: "APOIO_MORADIA", l: "Apoio para moradia" },
   { v: "APOIO_TRABALHO", l: "Apoio para trabalho/emprego" },
+  { v: "OUTRO", l: "Outro" },
 ];
+
+// O rótulo do detalhe depende do nível escolhido; "Detalhe" é só para não esconder dado antigo.
+const ROTULOS_ESCOLARIDADE_DETALHE: Record<string, string> = {
+  TECNICO: "Ensino Técnico de:",
+  FACULDADE: "Faculdade de:",
+};
 
 type Setter<T> = <K extends keyof T>(key: K, value: T[K]) => void;
 
 interface FichaFormParteAProps {
+  titulo?: string;
   ficha: FichaFormState;
   avaliacao: AvaliacaoFormState;
   historico: HistoricoFormState;
@@ -95,6 +103,7 @@ interface FichaFormParteAProps {
 const noop = () => {};
 
 export function FichaFormParteA({
+  titulo = "Parte A - Preenchida pela Mulher (com orientação da equipe)",
   ficha,
   avaliacao,
   historico,
@@ -104,11 +113,14 @@ export function FichaFormParteA({
   readOnly = false,
   children,
 }: FichaFormParteAProps) {
+  const rotuloEscolaridadeDetalhe =
+    ROTULOS_ESCOLARIDADE_DETALHE[avaliacao.nivelEscolaridade] ?? (avaliacao.escolaridadeDetalhe ? "Detalhe" : null);
+
   return (
     <fieldset disabled={readOnly} className={readOnly ? "[&_:disabled]:!opacity-100 [&_:disabled]:!cursor-default" : undefined}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg text-aziz-blue">Preenchimento pela Vítima</CardTitle>
+          <CardTitle className="text-lg text-aziz-blue">{titulo}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
@@ -119,7 +131,7 @@ export function FichaFormParteA({
               <div><Label htmlFor="idade">Idade</Label><Input id="idade" type="number" placeholder="Idade" value={ficha.idade} onChange={(e) => setF("idade", e.target.value)} /></div>
               <div><Label htmlFor="telefone">Telefone</Label><Input id="telefone" maxLength={20} placeholder="(00) 00000-0000" value={ficha.telefone} onChange={(e) => setF("telefone", e.target.value)} /></div>
               <div><Label htmlFor="estado_civil">Estado civil</Label><Input id="estado_civil" placeholder="Estado civil" value={ficha.estadoCivil} onChange={(e) => setF("estadoCivil", e.target.value)} /></div>
-              <div><Label htmlFor="dependentes">Pessoas dependentes</Label><Input id="dependentes" type="number" placeholder="Quantidade" value={ficha.pessoasDependentes} onChange={(e) => setF("pessoasDependentes", e.target.value)} /></div>
+              <div><Label htmlFor="dependentes">Quantos filhos ou pessoas dependem de mim</Label><Input id="dependentes" type="number" placeholder="Quantidade" value={ficha.pessoasDependentes} onChange={(e) => setF("pessoasDependentes", e.target.value)} /></div>
               <div className="md:col-span-2"><Label htmlFor="idade_filhos">Idade dos filhos/dependentes</Label><Input id="idade_filhos" placeholder="Ex: 3, 7, 12" value={ficha.idadeFilhos} onChange={(e) => setF("idadeFilhos", e.target.value)} /></div>
             </div>
           </div>
@@ -155,11 +167,9 @@ export function FichaFormParteA({
           <div>
             <h3 className="font-semibold text-foreground mb-4">4. Sobre meus filhos</h3>
             <div className="space-y-4">
-              <div><Label htmlFor="qtd_filhos">Quantidade de filhos</Label><Input id="qtd_filhos" type="number" className="max-w-[200px]" value={ficha.qtdFilhos} onChange={(e) => setF("qtdFilhos", e.target.value)} /></div>
+              <div><Label htmlFor="qtd_filhos">Quantidade de filhos que tenho</Label><Input id="qtd_filhos" type="number" className="max-w-[200px]" value={ficha.qtdFilhos} onChange={(e) => setF("qtdFilhos", e.target.value)} /></div>
               <Label className="block">Meus filhos moram:</Label>
               <RadioOptionList idPrefix="filhos" options={ONDE_MORAM_FILHOS} value={ficha.ondeMoramFilhos} onValueChange={(v) => setF("ondeMoramFilhos", v)} />
-              <Label className="block">Meus filhos precisam de supervisão?</Label>
-              <RadioOptionList idPrefix="supervisao" options={SUPERVISAO_FILHOS} value={ficha.supervisaoFilhos} onValueChange={(v) => setF("supervisaoFilhos", v)} />
             </div>
           </div>
 
@@ -212,7 +222,9 @@ export function FichaFormParteA({
                 <Label className="mb-2 block">Estudei até:</Label>
                 <RadioOptionList idPrefix="estudo" options={NIVEIS_ESCOLARIDADE} value={avaliacao.nivelEscolaridade} onValueChange={(v) => setA("nivelEscolaridade", v)} />
               </div>
-              <div><Label htmlFor="escolaridade_detalhe">Detalhe (ex: série, curso)</Label><Input id="escolaridade_detalhe" value={avaliacao.escolaridadeDetalhe} onChange={(e) => setA("escolaridadeDetalhe", e.target.value)} /></div>
+              {rotuloEscolaridadeDetalhe && (
+                <div><Label htmlFor="escolaridade_detalhe">{rotuloEscolaridadeDetalhe}</Label><Input id="escolaridade_detalhe" value={avaliacao.escolaridadeDetalhe} onChange={(e) => setA("escolaridadeDetalhe", e.target.value)} /></div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><Label className="mb-2 block">Fez curso profissionalizante?</Label><YesNoRadio idPrefix="curso-prof" value={avaliacao.fezCursoProfissionalizante} onValueChange={(v) => setA("fezCursoProfissionalizante", v)} /></div>
                 <div><Label htmlFor="curso_prof_qual">Qual?</Label><Input id="curso_prof_qual" value={avaliacao.cursoProfissionalizanteQual} onChange={(e) => setA("cursoProfissionalizanteQual", e.target.value)} /></div>
@@ -228,12 +240,16 @@ export function FichaFormParteA({
           <div>
             <h3 className="font-semibold text-foreground mb-4">8. Minha Rede de Apoio</h3>
             <div className="space-y-4">
-              <div><Label className="mb-2 block">Tenho familiares/amigos de confiança?</Label><YesNoRadio idPrefix="rede" value={avaliacao.temRedeApoio} onValueChange={(v) => setA("temRedeApoio", v)} /></div>
+              <div><Label className="mb-2 block">Tenho familiares ou amigos em quem confio para me ajudar neste momento?</Label><YesNoRadio idPrefix="rede" value={avaliacao.temRedeApoio} onValueChange={(v) => setA("temRedeApoio", v)} /></div>
               <div>
-                <Label className="mb-2 block">Filhos precisam de vaga em:</Label>
+                <Label className="mb-2 block">Se tenho filhos e eles precisam de supervisão, tenho com quem deixar eles?</Label>
+                <RadioOptionList idPrefix="supervisao" options={SUPERVISAO_FILHOS} value={ficha.supervisaoFilhos} onValueChange={(v) => setF("supervisaoFilhos", v)} />
+              </div>
+              <div>
+                <Label className="mb-2 block">Se tenho filhos, eles precisam de vaga em:</Label>
                 <CheckboxOptionList idPrefix="vaga" options={VAGAS_NECESSARIAS} value={ficha.vagasNecessarias} onValueChange={(v) => setF("vagasNecessarias", v)} />
               </div>
-              <div><Label className="mb-2 block">Preciso de ajuda para moradia?</Label><YesNoRadio idPrefix="ajuda-moradia" value={avaliacao.precisaAjudaMoradia} onValueChange={(v) => setA("precisaAjudaMoradia", v)} /></div>
+              <div><Label className="mb-2 block">Preciso de ajuda para ter onde morar agora?</Label><YesNoRadio idPrefix="ajuda-moradia" value={avaliacao.precisaAjudaMoradia} onValueChange={(v) => setA("precisaAjudaMoradia", v)} /></div>
               <div><Label className="mb-2 block">Tenho o que comer todos os dias?</Label><YesNoRadio idPrefix="comer" value={avaliacao.temOQueComer} onValueChange={(v) => setA("temOQueComer", v)} /></div>
             </div>
           </div>
@@ -277,7 +293,9 @@ export function FichaFormParteA({
             <h3 className="font-semibold text-foreground mb-4">11. O que eu preciso agora</h3>
             <div className="space-y-2">
               <CheckboxOptionList idPrefix="preciso" options={NECESSIDADES_IMEDIATAS} value={ficha.necessidadesImediatas} onValueChange={(v) => setF("necessidadesImediatas", v)} />
-              <div><Label htmlFor="preciso_outro">Outro</Label><Input id="preciso_outro" value={ficha.necessidadeOutraDescricao} onChange={(e) => setF("necessidadeOutraDescricao", e.target.value)} /></div>
+              {ficha.necessidadesImediatas.includes("OUTRO") && (
+                <div><Label htmlFor="preciso_outro">Outro, qual?</Label><Input id="preciso_outro" value={ficha.necessidadeOutraDescricao} onChange={(e) => setF("necessidadeOutraDescricao", e.target.value)} /></div>
+              )}
             </div>
           </div>
 

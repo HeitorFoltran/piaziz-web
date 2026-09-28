@@ -148,7 +148,7 @@ export default function FichaPublica() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        <FichaFormParteA ficha={ficha} avaliacao={avaliacao} historico={historico} setF={setF} setA={setA} setH={setH}>
+        <FichaFormParteA titulo="Suas informações" ficha={ficha} avaliacao={avaliacao} historico={historico} setF={setF} setA={setA} setH={setH}>
           <Separator />
           <div>
             <Label htmlFor="situacaoRelatada" className="font-semibold text-foreground">
