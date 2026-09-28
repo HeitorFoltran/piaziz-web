@@ -218,7 +218,8 @@ export default function AcompanhamentoDetalhe() {
                       </SelectContent>
                     </Select>
                     <Link to={`/acompanhamentos/${id}/editar`}>
-                      <Button size="sm" variant="outline" className="h-6 text-xs px-2">
+                      {/* No celular a coluna é mais estreita que o texto: quebra dentro do botão em vez de vazar do card. */}
+                      <Button size="sm" variant="outline" className="h-auto min-h-6 py-0.5 text-xs px-2 whitespace-normal">
                         Editar/Visualizar ficha
                       </Button>
                     </Link>
