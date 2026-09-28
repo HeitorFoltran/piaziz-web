@@ -59,7 +59,7 @@ describe("Layout - menu no celular", () => {
     expect(links.map((l) => l.textContent)).toEqual(["Links de preenchimento"]);
   });
 
-  it("PADRAO vê as seis abas na ordem certa", () => {
+  it("PADRAO vê as cinco abas na ordem certa", () => {
     renderLayout();
     fireEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
 
@@ -67,7 +67,6 @@ describe("Layout - menu no celular", () => {
     expect(links.map((l) => l.textContent)).toEqual([
       "Home",
       "Acompanhamentos",
-      "Relatórios",
       "Cadastros",
       "Fichas pendentes",
       "Links de preenchimento",

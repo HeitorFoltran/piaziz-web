@@ -100,6 +100,8 @@ export interface Acompanhamento {
   status: string;
   dataAtualizacao: string;
   dataCriacao: string;
+  /** null em fichas antigas, sem registro de quem criou. */
+  criadoPorId: number | null;
   tiposAcompanhamento: TipoAcompanhamento[];
 }
 
@@ -352,6 +354,8 @@ export interface HistoricoAtendimentoRequest {
 export interface Servico {
   id: number;
   nome: string;
+  /** Só na listagem do catálogo: tem encaminhamento ou profissional ligado e não pode ser excluído. */
+  emUso?: boolean;
 }
 
 export interface ServicoRequest {
@@ -361,6 +365,8 @@ export interface ServicoRequest {
 export interface TipoAcompanhamento {
   id: number;
   nome: string;
+  /** Só na listagem do catálogo: atribuído a algum caso e não pode ser excluído. */
+  emUso?: boolean;
 }
 
 export interface TipoAcompanhamentoRequest {

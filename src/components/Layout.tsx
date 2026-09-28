@@ -7,7 +7,6 @@ import { useAuth } from "@/contexts/AuthContext";
 const navItemsEquipe = [
   { label: "Home", path: "/" },
   { label: "Acompanhamentos", path: "/acompanhamentos" },
-  { label: "Relatórios", path: "/relatorios" },
   { label: "Cadastros", path: "/cadastros" },
   { label: "Fichas pendentes", path: "/fichas-pendentes" },
   { label: "Links de preenchimento", path: "/convites" },

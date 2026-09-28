@@ -1,11 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RequireAuth } from "@/components/RequireAuth";
 import Index from "./pages/Index.tsx";
-import Relatorios from "./pages/Relatorios.tsx";
 import Acompanhamentos from "./pages/Acompanhamentos.tsx";
 import AcompanhamentoDetalhe from "./pages/AcompanhamentoDetalhe.tsx";
 import Cadastros from "./pages/Cadastros.tsx";
@@ -28,7 +27,8 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<RequireAuth><Index /></RequireAuth>} />
-            <Route path="/relatorios" element={<RequireAuth><Relatorios /></RequireAuth>} />
+            {/* Relatórios fora da navegação desde o lote 6: as métricas vão ser reformuladas. */}
+            <Route path="/relatorios" element={<RequireAuth><Navigate to="/" replace /></RequireAuth>} />
             <Route path="/acompanhamentos" element={<RequireAuth><Acompanhamentos /></RequireAuth>} />
             <Route path="/acompanhamentos/:id" element={<RequireAuth><AcompanhamentoDetalhe /></RequireAuth>} />
             <Route path="/acompanhamentos/:id/editar" element={<RequireAuth><EditarFicha /></RequireAuth>} />
