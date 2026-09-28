@@ -19,14 +19,6 @@ import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status
 import { toast } from "sonner";
 import type { AlteracaoFicha, EncaminhamentoRequest, TipoAcompanhamento } from "@/types/api";
 
-const tipoMoradiaLabel: Record<string, string> = {
-  CASA_PROPRIA: "Casa própria",
-  ALUGADA: "Alugada",
-  CEDIDA: "Cedida",
-  ABRIGO: "Abrigo",
-  OUTRO: "Outro",
-};
-
 const emptyEncaminhamento: EncaminhamentoRequest = {
   servicoId: 0,
   categoria: undefined,
@@ -59,7 +51,6 @@ export default function AcompanhamentoDetalhe() {
   const [novoComentario, setNovoComentario] = useState("");
   const [encModalOpen, setEncModalOpen] = useState(false);
   const [encForm, setEncForm] = useState<EncaminhamentoRequest>(emptyEncaminhamento);
-  const [fichaExpandida, setFichaExpandida] = useState(false);
   const [alteracoesExpandidas, setAlteracoesExpandidas] = useState(false);
   const [visualizacoesExpandidas, setVisualizacoesExpandidas] = useState(false);
 
@@ -192,7 +183,7 @@ export default function AcompanhamentoDetalhe() {
                 <div><span className="text-muted-foreground block text-xs">Documento</span><span className="font-medium">{ficha?.cpf ?? "-"}</span></div>
                 <div className="flex flex-col gap-2">
                   <span className="text-muted-foreground block text-xs">Status</span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Select
                       value={ficha?.status}
                       onValueChange={(v) => statusMutation.mutate(v as StatusFicha)}
@@ -208,10 +199,10 @@ export default function AcompanhamentoDetalhe() {
                       </SelectContent>
                     </Select>
                     <Link to={`/acompanhamentos/${id}/editar`}>
-    <Button size="sm" variant="outline" className="h-6 text-xs px-2">
-      Editar ficha
-    </Button>
-  </Link>
+                      <Button size="sm" variant="outline" className="h-6 text-xs px-2">
+                        Editar/Visualizar ficha
+                      </Button>
+                    </Link>
                   </div>
                 </div>
                 <div><span className="text-muted-foreground block text-xs">Nº Caso</span><span className="font-medium">{ficha?.numeroCaso ?? "-"}</span></div>
@@ -230,30 +221,6 @@ export default function AcompanhamentoDetalhe() {
             )}
           </CardContent>
         </Card>
-
-        {!isLoading && ficha && (
-          <Card className="mb-4">
-            <CardHeader className="cursor-pointer select-none p-4" onClick={() => setFichaExpandida((v) => !v)}>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-semibold text-aziz-blue">Dados do PIA preenchidos</CardTitle>
-                {fichaExpandida ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-              </div>
-            </CardHeader>
-            {fichaExpandida && (
-              <CardContent className="p-4 pt-0 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                <div><span className="text-muted-foreground block text-xs">Telefone</span><span className="font-medium">{ficha.telefone ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Idade</span><span className="font-medium">{ficha.idade ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Estado Civil</span><span className="font-medium">{ficha.estadoCivil ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Pessoas Dependentes</span><span className="font-medium">{ficha.pessoasDependentes ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Idade dos Filhos</span><span className="font-medium">{ficha.idadeFilhos ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Qtd. Filhos</span><span className="font-medium">{ficha.qtdFilhos ?? "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Nível de Segurança</span><span className="font-medium">{ficha.nivelSeguranca != null ? `${ficha.nivelSeguranca} / 5` : "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Tipo de Moradia</span><span className="font-medium">{ficha.tipoMoradia ? (tipoMoradiaLabel[ficha.tipoMoradia] ?? ficha.tipoMoradia) : "-"}</span></div>
-                <div><span className="text-muted-foreground block text-xs">Qtd. Moradores</span><span className="font-medium">{ficha.qtdMoradores ?? "-"}</span></div>
-              </CardContent>
-            )}
-          </Card>
-        )}
 
         {!isLoading && ficha && (
           <Card className="mb-6">
