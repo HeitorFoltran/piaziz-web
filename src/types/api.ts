@@ -146,6 +146,13 @@ export interface AlteracaoFicha {
   timestamp: string;
 }
 
+// Uma linha por abertura do detalhe do caso. profissionalNome é null se a conta não existe mais.
+export interface VisualizacaoFicha {
+  profissionalId: number;
+  profissionalNome: string | null;
+  timestamp: string;
+}
+
 export interface Ficha {
   id: number;
   codigoFicha: string;
