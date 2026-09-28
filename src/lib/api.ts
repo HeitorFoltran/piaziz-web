@@ -31,6 +31,7 @@ import type {
   TipoAcompanhamentoRequest,
   TrocarSenhaRequest,
   UsuarioAtual,
+  VisualizacaoFicha,
 } from "@/types/api";
 
 export const API_BASE_URL =
@@ -218,6 +219,10 @@ export function getInteracoes(fichaId: number | string): Promise<Interacao[]> {
 
 export function getAlteracoesFicha(fichaId: number | string): Promise<AlteracaoFicha[]> {
   return request<AlteracaoFicha[]>(`/api/fichas/${fichaId}/alteracoes`);
+}
+
+export function getVisualizacoesFicha(fichaId: number | string): Promise<VisualizacaoFicha[]> {
+  return request<VisualizacaoFicha[]>(`/api/fichas/${fichaId}/visualizacoes`);
 }
 
 export function createInteracao(
