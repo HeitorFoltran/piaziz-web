@@ -5,7 +5,7 @@ export type StatusFicha = "ATIVO" | "PAUSADO" | "ENCERRADO";
 export const STATUS_LABEL: Record<StatusFicha, string> = {
   ATIVO: "Ativo",
   PAUSADO: "Pausado",
-  ENCERRADO: "Encerrado",
+  ENCERRADO: "Arquivado",
 };
 
 export const STATUS_BADGE_CLASS: Record<StatusFicha, string> = {
