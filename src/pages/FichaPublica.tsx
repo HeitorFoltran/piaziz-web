@@ -37,9 +37,8 @@ function Moldura({ children, largo = false }: { children: ReactNode; largo?: boo
   return (
     <div className="min-h-screen bg-muted px-4 py-10">
       <div className={cn("mx-auto", largo ? "max-w-3xl" : "max-w-lg")}>
-        <div className="mb-6 flex items-center justify-center gap-1">
-          <span className="font-logo text-2xl font-black tracking-tight text-primary">AZIZ</span>
-          <span className="text-xs font-medium text-muted-foreground">defensoria</span>
+        <div className="mb-6 flex items-center justify-center">
+          <span className="font-logo text-2xl font-black tracking-tight text-primary">PIAZIZ</span>
         </div>
         {largo ? children : <div className="rounded-lg border border-border bg-card p-6 shadow-sm">{children}</div>}
       </div>
