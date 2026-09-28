@@ -100,6 +100,8 @@ export interface Acompanhamento {
   status: string;
   dataAtualizacao: string;
   dataCriacao: string;
+  /** null em fichas antigas, sem registro de quem criou. */
+  criadoPorId: number | null;
   tiposAcompanhamento: TipoAcompanhamento[];
 }
 
