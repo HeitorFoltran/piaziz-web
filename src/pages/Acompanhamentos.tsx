@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TiposAcompanhamentoTags } from "@/components/ficha/TiposAcompanhamentoTags";
 import { FiltrosAcompanhamentos } from "@/components/acompanhamentos/FiltrosAcompanhamentos";
+import { PaginacaoAcompanhamentos } from "@/components/acompanhamentos/PaginacaoAcompanhamentos";
 import { Skeleton } from "@/components/ui/skeleton";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getAcompanhamentos, getServicos, getTiposAcompanhamento } from "@/lib/api";
@@ -17,6 +18,7 @@ import {
   FILTROS_PADRAO,
   contarFiltrosAtivos,
   lerFiltros,
+  lerPagina,
   paramsDosFiltros,
   type FiltrosAcompanhamentos as Filtros,
 } from "@/lib/filtros-acompanhamentos";
@@ -27,15 +29,22 @@ export default function Acompanhamentos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
   const filtros = lerFiltros(searchParams);
+  const pagina = lerPagina(searchParams);
   // O campo de busca tem estado próprio e só vai para a URL (e para a API) depois do debounce.
   const [search, setSearch] = useState(q);
   const [painelAberto, setPainelAberto] = useState(false);
 
   // replace: o "voltar" do navegador não passa por cada mudança de filtro.
+  // Mudar filtro ou busca volta para a página 1: paramsDosFiltros sem página.
   const atualizarUrl = (novoQ: string, novosFiltros: Filtros) =>
     setSearchParams(paramsDosFiltros(novoQ, novosFiltros), { replace: true });
   const mudarFiltros = (mudanca: Partial<Filtros>) => atualizarUrl(q, { ...filtros, ...mudanca });
   const limparFiltros = () => atualizarUrl(q, FILTROS_PADRAO);
+  // Troca de página é push: o "voltar" do navegador volta uma página da lista.
+  const irParaPagina = (nova: number) => {
+    setSearchParams(paramsDosFiltros(q, filtros, nova));
+    window.scrollTo({ top: 0 });
+  };
 
   useEffect(() => {
     const busca = search.trim();
@@ -51,7 +60,7 @@ export default function Acompanhamentos() {
   const intervaloInvalido = de !== "" && ate !== "" && de > ate;
 
   const { data, isLoading, isError, error, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ["acompanhamentos", q, filtros],
+    queryKey: ["acompanhamentos", q, filtros, pagina],
     queryFn: () =>
       getAcompanhamentos({
         q: q || undefined,
@@ -62,9 +71,9 @@ export default function Acompanhamentos() {
         campoData,
         de: intervaloInvalido ? undefined : de || undefined,
         ate: intervaloInvalido ? undefined : ate || undefined,
-        page: 0,
+        page: pagina - 1,
       }),
-    // Troca de filtro não volta para o skeleton: a lista anterior fica, esmaecida, até a nova chegar.
+    // Troca de filtro ou de página não volta para o skeleton: a lista anterior fica, esmaecida, até a nova chegar.
     placeholderData: keepPreviousData,
   });
 
@@ -80,7 +89,19 @@ export default function Acompanhamentos() {
 
   const items = data?.itens ?? [];
   const totalItens = data?.totalItens ?? 0;
+  const totalPaginas = data?.totalPaginas ?? 0;
   const atualizando = isFetching && isPlaceholderData;
+
+  // Página além do fim (link antigo, ou o último caso da página saiu do filtro): a API devolve itens
+  // vazio com o total certo, e a URL vai para a última página em vez de mostrar "nenhum encontrado".
+  const alemDoFim = !!data && !isPlaceholderData && items.length === 0 && totalPaginas > 0 && pagina > totalPaginas;
+  useEffect(() => {
+    if (!alemDoFim) return;
+    setSearchParams(
+      (atual) => paramsDosFiltros(atual.get("q") ?? "", lerFiltros(atual), totalPaginas),
+      { replace: true },
+    );
+  }, [alemDoFim, totalPaginas, setSearchParams]);
 
   const filtrosAtivos = contarFiltrosAtivos(filtros);
   const carregado = !isLoading && !isError;
@@ -172,10 +193,12 @@ export default function Acompanhamentos() {
                   </Link>
                 );
               })}
-              {!isLoading && !isError && items.length === 0 && (
+              {!isLoading && !isError && items.length === 0 && !alemDoFim && !atualizando && (
                 <p className="text-center text-muted-foreground py-12">Nenhum acompanhamento encontrado.</p>
               )}
             </div>
+
+            {carregado && <PaginacaoAcompanhamentos pagina={pagina} totalPaginas={totalPaginas} onMudar={irParaPagina} />}
           </div>
         </div>
       </div>

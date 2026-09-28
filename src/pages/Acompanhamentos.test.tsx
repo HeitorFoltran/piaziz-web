@@ -126,6 +126,8 @@ beforeAll(() => {
   Element.prototype.hasPointerCapture ??= () => false;
   Element.prototype.releasePointerCapture ??= () => {};
   Element.prototype.scrollIntoView ??= () => {};
+  // O jsdom não implementa scrollTo e reclama no console.
+  window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
 });
 
 beforeEach(() => {
@@ -202,10 +204,12 @@ describe("Acompanhamentos - filtros", () => {
   });
 
   it("abre já filtrado pelos parâmetros da URL e mostra exatamente o que a API devolveu", async () => {
-    renderPagina("/acompanhamentos?status=PAUSADO&meus=1");
+    vi.mocked(getAcompanhamentos).mockResolvedValue(pagina(itens, { pagina: 1, totalItens: 23, totalPaginas: 2 }));
+    renderPagina("/acompanhamentos?status=PAUSADO&meus=1&pagina=2");
 
     await screen.findByText("Maria");
-    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "PAUSADO", meus: true }));
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "PAUSADO", meus: true, page: 1 }));
+    expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
     // Nada é filtrado no cliente.
     expect(nomesVisiveis()).toEqual(["Maria", "Joana", "Lúcia"]);
     expect(screen.getByRole("checkbox", { name: "Criados por mim" })).toBeChecked();
@@ -219,12 +223,17 @@ describe("Acompanhamentos - filtros", () => {
     expect((await screen.findAllByText("45 acompanhamentos")).length).toBeGreaterThan(0);
   });
 
-  it("Limpar zera todos os filtros e mantém a busca", async () => {
-    vi.mocked(getAcompanhamentos).mockImplementation(async (params) => pagina(params.status ? [] : itens));
-    renderPagina("/acompanhamentos?q=silva&meus=1&status=PAUSADO&tipo=10&campoData=dataCriacao&de=2026-09-01&ate=2026-09-30");
+  it("Limpar zera todos os filtros, mantém a busca e volta para a página 1", async () => {
+    vi.mocked(getAcompanhamentos).mockImplementation(async (params) =>
+      params.status ? pagina([], { pagina: 1, totalItens: 0, totalPaginas: 0 }) : pagina(itens),
+    );
+    renderPagina(
+      "/acompanhamentos?q=silva&meus=1&status=PAUSADO&tipo=10&campoData=dataCriacao&de=2026-09-01&ate=2026-09-30&pagina=2",
+    );
     expect(await screen.findByText("Nenhum acompanhamento encontrado.")).toBeInTheDocument();
     expect(getAcompanhamentos).toHaveBeenLastCalledWith(
       chamada({
+        page: 1,
         q: "silva",
         meus: true,
         status: "PAUSADO",
@@ -256,6 +265,75 @@ describe("Acompanhamentos - filtros", () => {
 
     await waitFor(() => expect(url()).toBe("?q=joana"));
     expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ q: "joana" }));
+  });
+
+  it("a busca, depois do debounce, volta para a página 1", async () => {
+    vi.mocked(getAcompanhamentos).mockResolvedValue(pagina(itens, { totalItens: 45, totalPaginas: 3 }));
+    renderPagina("/acompanhamentos?status=ATIVO&pagina=3");
+    await screen.findByText("Maria");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "ATIVO", page: 2 }));
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Buscar" }), { target: { value: "joana" } });
+
+    await waitFor(() => expect(url()).toBe("?q=joana&status=ATIVO"));
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ q: "joana", status: "ATIVO" }));
+  });
+
+  it("mudar um filtro na página 3 volta para a página 1", async () => {
+    vi.mocked(getAcompanhamentos).mockResolvedValue(pagina(itens, { totalItens: 45, totalPaginas: 3 }));
+    renderPagina("/acompanhamentos?pagina=3");
+    await screen.findByText("Maria");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ page: 2 }));
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Criados por mim" }));
+
+    await waitFor(() => expect(url()).toBe("?meus=1"));
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ meus: true }));
+  });
+});
+
+describe("Acompanhamentos - paginação", () => {
+  it("Próxima leva à página 2, e Anterior só funciona fora da primeira", async () => {
+    vi.mocked(getAcompanhamentos).mockImplementation(async (params) =>
+      pagina(params.page === 0 ? itens.slice(0, 2) : itens.slice(2), { pagina: params.page, totalItens: 3, totalPaginas: 2 }),
+    );
+    renderPagina("/acompanhamentos?status=PAUSADO");
+    await screen.findByText("Maria");
+
+    const paginacao = screen.getByRole("navigation", { name: "Paginação" });
+    expect(within(paginacao).getByText("Página 1 de 2")).toBeInTheDocument();
+    expect(within(paginacao).getByRole("button", { name: "Página anterior" })).toBeDisabled();
+
+    fireEvent.click(within(paginacao).getByRole("button", { name: "Próxima página" }));
+
+    await screen.findByText("Lúcia");
+    expect(url()).toBe("?status=PAUSADO&pagina=2");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "PAUSADO", page: 1 }));
+    expect(window.scrollTo).toHaveBeenCalledWith({ top: 0 });
+    expect(screen.getByText("Página 2 de 2")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Próxima página" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Página anterior" })).toBeEnabled();
+  });
+
+  it("não aparece quando tudo cabe numa página", async () => {
+    renderPagina();
+    await screen.findByText("Maria");
+
+    expect(screen.queryByRole("navigation", { name: "Paginação" })).not.toBeInTheDocument();
+  });
+
+  it("página além do fim leva a URL para a última página", async () => {
+    vi.mocked(getAcompanhamentos).mockImplementation(async (params) =>
+      params.page > 1
+        ? pagina([], { pagina: params.page, totalItens: 25, totalPaginas: 2 })
+        : pagina(itens, { pagina: params.page, totalItens: 25, totalPaginas: 2 }),
+    );
+    renderPagina("/acompanhamentos?tipo=10&pagina=5");
+
+    await waitFor(() => expect(url()).toBe("?tipo=10&pagina=2"));
+    await screen.findByText("Maria");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ tipoId: "10", page: 1 }));
+    expect(screen.queryByText("Nenhum acompanhamento encontrado.")).not.toBeInTheDocument();
   });
 });
 
