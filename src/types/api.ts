@@ -105,6 +105,16 @@ export interface Acompanhamento {
   tiposAcompanhamento: TipoAcompanhamento[];
 }
 
+/** Uma página de uma listagem paginada na API (PaginaDTO). */
+export interface Pagina<T> {
+  itens: T[];
+  /** Base 0, como a API. */
+  pagina: number;
+  tamanho: number;
+  totalItens: number;
+  totalPaginas: number;
+}
+
 export interface Encaminhamento {
   id: number;
   fichaId: number;

@@ -10,8 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { TiposAcompanhamentoTags } from "@/components/ficha/TiposAcompanhamentoTags";
 import { FiltrosAcompanhamentos } from "@/components/acompanhamentos/FiltrosAcompanhamentos";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getAcompanhamentos, getServicos, getTiposAcompanhamento } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import {
@@ -24,7 +23,6 @@ import {
 import { STATUS_LABEL, STATUS_BADGE_CLASS, type StatusFicha } from "@/lib/status";
 
 export default function Acompanhamentos() {
-  const { auth } = useAuth();
   // Os filtros moram na URL: abrir um caso e voltar mantém a lista como estava.
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
@@ -46,13 +44,28 @@ export default function Acompanhamentos() {
     return () => clearTimeout(t);
   }, [search, q, setSearchParams]);
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["acompanhamentos", q, filtros.servico],
+  // Todos os filtros rodam na API, que devolve uma página. Nada é filtrado aqui: filtrar só a página
+  // recebida deixaria a contagem e a navegação entre páginas erradas.
+  // Datas invertidas: o aviso aparece no FiltrosAcompanhamentos e o intervalo não vai para a API.
+  const { de, ate, campoData } = filtros;
+  const intervaloInvalido = de !== "" && ate !== "" && de > ate;
+
+  const { data, isLoading, isError, error, isFetching, isPlaceholderData } = useQuery({
+    queryKey: ["acompanhamentos", q, filtros],
     queryFn: () =>
       getAcompanhamentos({
         q: q || undefined,
         servicoId: filtros.servico === "all" ? undefined : filtros.servico,
+        status: filtros.status === "all" ? undefined : filtros.status,
+        tipoId: filtros.tipo === "all" ? undefined : filtros.tipo,
+        meus: filtros.meus || undefined,
+        campoData,
+        de: intervaloInvalido ? undefined : de || undefined,
+        ate: intervaloInvalido ? undefined : ate || undefined,
+        page: 0,
       }),
+    // Troca de filtro não volta para o skeleton: a lista anterior fica, esmaecida, até a nova chegar.
+    placeholderData: keepPreviousData,
   });
 
   const { data: servicos = [] } = useQuery({
@@ -65,28 +78,13 @@ export default function Acompanhamentos() {
     queryFn: getTiposAcompanhamento,
   });
 
-  // Tudo menos busca e serviço é filtrado no cliente: a listagem vem inteira, sem paginação.
-  // Datas: compara strings YYYY-MM-DD. A API manda LocalDateTime sem fuso (horário de Brasília),
-  // e converter com new Date(...) pode jogar o registro para o dia anterior.
-  const { de, ate, campoData } = filtros;
-  const intervaloInvalido = de !== "" && ate !== "" && de > ate;
-  const noIntervalo = (iso: string) => {
-    if (intervaloInvalido) return true;
-    const dia = iso.slice(0, 10);
-    return (!de || dia >= de) && (!ate || dia <= ate);
-  };
-
-  const items = (data ?? []).filter(
-    (item) =>
-      (!filtros.meus || item.criadoPorId === auth?.id) &&
-      (filtros.status === "all" || item.status === filtros.status) &&
-      (filtros.tipo === "all" || (item.tiposAcompanhamento ?? []).some((t) => String(t.id) === filtros.tipo)) &&
-      noIntervalo(item[campoData])
-  );
+  const items = data?.itens ?? [];
+  const totalItens = data?.totalItens ?? 0;
+  const atualizando = isFetching && isPlaceholderData;
 
   const filtrosAtivos = contarFiltrosAtivos(filtros);
   const carregado = !isLoading && !isError;
-  const contagem = `${items.length} ${items.length === 1 ? "acompanhamento" : "acompanhamentos"}`;
+  const contagem = `${totalItens} ${totalItens === 1 ? "acompanhamento" : "acompanhamentos"}`;
 
   const botaoLimpar = filtrosAtivos > 0 && (
     <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={limparFiltros}>
@@ -133,7 +131,7 @@ export default function Acompanhamentos() {
             </div>
             {carregado && <p className="lg:hidden text-sm text-muted-foreground">{contagem}</p>}
 
-            <div className="space-y-2">
+            <div className={`space-y-2 transition-opacity ${atualizando ? "opacity-60" : ""}`} aria-busy={atualizando}>
               {isLoading && Array.from({ length: 4 }).map((_, i) => (
                 <Card key={i}><CardContent className="p-4"><Skeleton className="h-6 w-full" /></CardContent></Card>
               ))}
@@ -201,7 +199,7 @@ export default function Acompanhamentos() {
           </div>
           <SheetFooter className="border-t p-4">
             <Button className="w-full" onClick={() => setPainelAberto(false)}>
-              Ver {items.length} {items.length === 1 ? "resultado" : "resultados"}
+              Ver {totalItens} {totalItens === 1 ? "resultado" : "resultados"}
             </Button>
           </SheetFooter>
         </SheetContent>

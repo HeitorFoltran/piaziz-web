@@ -6,7 +6,7 @@ import Acompanhamentos from "./Acompanhamentos";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { getAcompanhamentos, getServicos, getTiposAcompanhamento } from "@/lib/api";
 import { useAuth, type Perfil } from "@/contexts/AuthContext";
-import type { Acompanhamento } from "@/types/api";
+import type { Acompanhamento, Pagina } from "@/types/api";
 
 vi.mock("@/lib/api");
 
@@ -38,8 +38,6 @@ function acompanhamento(overrides: Partial<Acompanhamento>): Acompanhamento {
 const VIOLENCIA = { id: 10, nome: "Violência doméstica" };
 const MORADIA = { id: 11, nome: "Moradia" };
 
-// Criação e atualização em ordens diferentes, para a troca de campo mudar o resultado.
-// O usuário logado é o id 1: só Maria e Lúcia foram criadas por ele.
 const itens = [
   acompanhamento({
     id: 1,
@@ -67,6 +65,17 @@ const itens = [
     dataAtualizacao: "2026-09-20T00:00:00",
   }),
 ];
+
+// Os filtros rodam na API: o mock devolve o que for pedido, e os testes conferem os parâmetros da chamada.
+function pagina(lista: Acompanhamento[], extra: Partial<Pagina<Acompanhamento>> = {}): Pagina<Acompanhamento> {
+  return { itens: lista, pagina: 0, tamanho: 20, totalItens: lista.length, totalPaginas: lista.length > 0 ? 1 : 0, ...extra };
+}
+
+// Parâmetros esperados em getAcompanhamentos. O matcher trata undefined como ausente,
+// então o que não está aqui não pode ter ido na chamada.
+function chamada(extra: Record<string, unknown> = {}) {
+  return { campoData: "dataAtualizacao", page: 0, ...extra };
+}
 
 function perfil(): Perfil {
   return { id: 1, nome: "Ana", username: "ana", role: "PADRAO", podeGerenciarProfissionais: false, deveTrocarSenha: false };
@@ -121,38 +130,31 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getAcompanhamentos).mockResolvedValue(itens);
+  vi.mocked(getAcompanhamentos).mockResolvedValue(pagina(itens));
   vi.mocked(getServicos).mockResolvedValue([]);
   vi.mocked(getTiposAcompanhamento).mockResolvedValue([VIOLENCIA, MORADIA]);
   vi.mocked(useAuth).mockReturnValue({ auth: perfil(), carregando: false });
 });
 
 describe("Acompanhamentos - filtro por data", () => {
-  it("filtra por data de criação com intervalo inclusivo nas bordas", async () => {
+  it("manda o campo de criação e o intervalo para a API", async () => {
     renderPagina();
     await screen.findByText("Maria");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada());
 
     escolherCampo("Data de criação");
     setData("De", "2026-09-10");
     setData("Até", "2026-09-20");
 
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Joana", "Lúcia"]));
+    await waitFor(() =>
+      expect(getAcompanhamentos).toHaveBeenLastCalledWith(
+        chamada({ campoData: "dataCriacao", de: "2026-09-10", ate: "2026-09-20" }),
+      ),
+    );
+    expect(screen.getAllByText(/^Criado:/)).toHaveLength(3);
   });
 
-  it("trocar para última atualização muda o resultado", async () => {
-    renderPagina();
-    await screen.findByText("Maria");
-
-    escolherCampo("Data de criação");
-    setData("De", "2026-09-15");
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Lúcia"]));
-
-    escolherCampo("Última atualização");
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Maria", "Lúcia"]));
-    expect(screen.getAllByText(/^Atualizado:/)).toHaveLength(2);
-  });
-
-  it("De depois de Até mostra o aviso e não esconde nada", async () => {
+  it("De depois de Até mostra o aviso e não manda o intervalo", async () => {
     renderPagina();
     await screen.findByText("Maria");
 
@@ -160,52 +162,84 @@ describe("Acompanhamentos - filtro por data", () => {
     setData("Até", "2026-09-10");
 
     expect(await screen.findByText("A data inicial é depois da final.")).toBeInTheDocument();
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada());
     expect(nomesVisiveis()).toEqual(["Maria", "Joana", "Lúcia"]);
   });
 });
 
-describe("Acompanhamentos - filtros novos", () => {
-  it("Criados por mim mostra só os casos do usuário logado", async () => {
+describe("Acompanhamentos - filtros", () => {
+  it("Criados por mim manda meus: true", async () => {
     renderPagina();
     await screen.findByText("Maria");
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Criados por mim" }));
 
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Maria", "Lúcia"]));
+    await waitFor(() => expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ meus: true })));
     expect(url()).toBe("?meus=1");
   });
 
-  it("tipo de acompanhamento mostra só quem tem o tipo, e Todos os tipos volta a lista", async () => {
+  it("tipo manda tipoId, e Todos os tipos tira o filtro", async () => {
     renderPagina();
     await screen.findByText("Maria");
 
     escolher("Tipo de acompanhamento", "Moradia");
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Joana"]));
+    await waitFor(() => expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ tipoId: "11" })));
     expect(url()).toBe("?tipo=11");
 
     escolher("Tipo de acompanhamento", "Todos os tipos");
-    await waitFor(() => expect(nomesVisiveis()).toEqual(["Maria", "Joana", "Lúcia"]));
+    await waitFor(() => expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada()));
     expect(url()).toBe("");
   });
 
-  it("abre já filtrado pelos parâmetros da URL", async () => {
+  it("status manda o status escolhido", async () => {
+    renderPagina();
+    await screen.findByText("Maria");
+
+    escolher("Status", "Pausado");
+
+    await waitFor(() => expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "PAUSADO" })));
+    expect(url()).toBe("?status=PAUSADO");
+  });
+
+  it("abre já filtrado pelos parâmetros da URL e mostra exatamente o que a API devolveu", async () => {
     renderPagina("/acompanhamentos?status=PAUSADO&meus=1");
 
-    expect(await screen.findByText("Lúcia")).toBeInTheDocument();
-    expect(nomesVisiveis()).toEqual(["Lúcia"]);
+    await screen.findByText("Maria");
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ status: "PAUSADO", meus: true }));
+    // Nada é filtrado no cliente.
+    expect(nomesVisiveis()).toEqual(["Maria", "Joana", "Lúcia"]);
     expect(screen.getByRole("checkbox", { name: "Criados por mim" })).toBeChecked();
     expect(screen.getByRole("combobox", { name: "Status" })).toHaveTextContent("Pausado");
   });
 
+  it("a contagem mostra o total da API, não o tamanho da página", async () => {
+    vi.mocked(getAcompanhamentos).mockResolvedValue(pagina(itens, { totalItens: 45, totalPaginas: 3 }));
+    renderPagina();
+
+    expect((await screen.findAllByText("45 acompanhamentos")).length).toBeGreaterThan(0);
+  });
+
   it("Limpar zera todos os filtros e mantém a busca", async () => {
+    vi.mocked(getAcompanhamentos).mockImplementation(async (params) => pagina(params.status ? [] : itens));
     renderPagina("/acompanhamentos?q=silva&meus=1&status=PAUSADO&tipo=10&campoData=dataCriacao&de=2026-09-01&ate=2026-09-30");
-    // Nenhum caso passa em todos os filtros juntos.
     expect(await screen.findByText("Nenhum acompanhamento encontrado.")).toBeInTheDocument();
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(
+      chamada({
+        q: "silva",
+        meus: true,
+        status: "PAUSADO",
+        tipoId: "10",
+        campoData: "dataCriacao",
+        de: "2026-09-01",
+        ate: "2026-09-30",
+      }),
+    );
     expect(screen.getByRole("textbox", { name: "Buscar" })).toHaveValue("silva");
 
     fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
 
     await waitFor(() => expect(nomesVisiveis()).toEqual(["Maria", "Joana", "Lúcia"]));
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ q: "silva" }));
     expect(url()).toBe("?q=silva");
     expect(screen.getByRole("textbox", { name: "Buscar" })).toHaveValue("silva");
     expect(screen.getByRole("checkbox", { name: "Criados por mim" })).not.toBeChecked();
@@ -221,12 +255,15 @@ describe("Acompanhamentos - filtros novos", () => {
     expect(url()).toBe("");
 
     await waitFor(() => expect(url()).toBe("?q=joana"));
-    expect(getAcompanhamentos).toHaveBeenLastCalledWith({ q: "joana", servicoId: undefined });
+    expect(getAcompanhamentos).toHaveBeenLastCalledWith(chamada({ q: "joana" }));
   });
 });
 
 describe("Acompanhamentos - painel de filtros no celular", () => {
-  it("fechado, não monta nada; aberto, mostra os filtros e o total", async () => {
+  it("fechado, não monta nada; aberto, mostra os filtros e o total da API", async () => {
+    vi.mocked(getAcompanhamentos).mockImplementation(async (params) =>
+      params.meus ? pagina([itens[2]], { totalItens: 1 }) : pagina(itens.slice(1), { totalItens: 30, totalPaginas: 2 }),
+    );
     renderPagina("/acompanhamentos?status=PAUSADO");
     await screen.findByText("Joana");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -234,6 +271,7 @@ describe("Acompanhamentos - painel de filtros no celular", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filtros (1)" }));
 
     const painel = await screen.findByRole("dialog");
+    expect(within(painel).getByRole("button", { name: "Ver 30 resultados" })).toBeInTheDocument();
     fireEvent.click(within(painel).getByRole("checkbox", { name: "Criados por mim" }));
     await waitFor(() => expect(within(painel).getByRole("button", { name: "Ver 1 resultado" })).toBeInTheDocument());
 

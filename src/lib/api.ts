@@ -20,6 +20,7 @@ import type {
   Interacao,
   InteracaoRequest,
   LoginResponse,
+  Pagina,
   Profissional,
   ProfissionalEdicaoRequest,
   ProfissionalRequest,
@@ -32,6 +33,8 @@ import type {
   TrocarSenhaRequest,
   UsuarioAtual,
 } from "@/types/api";
+import type { CampoData } from "@/lib/filtros-acompanhamentos";
+import type { StatusFicha } from "@/lib/status";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8081";
@@ -160,12 +163,32 @@ export function getRelatorios(granularidade: "dia" | "semana" | "mes"): Promise<
   return request<RelatorioAnalitico>(`/api/dashboard/relatorios?granularidade=${granularidade}`);
 }
 
-export function getAcompanhamentos(params?: {
+// Todos os filtros rodam na API. Valor padrão não vai: meus só quando true, campoData só quando
+// for dataCriacao, e size nunca (a API usa 20).
+export function getAcompanhamentos(params: {
   q?: string;
-  servicoId?: number | string;
-}): Promise<Acompanhamento[]> {
-  return request<Acompanhamento[]>(
-    `/api/acompanhamentos${buildQuery({ q: params?.q, servicoId: params?.servicoId })}`,
+  servicoId?: string;
+  status?: StatusFicha;
+  tipoId?: string;
+  meus?: boolean;
+  campoData?: CampoData;
+  de?: string;
+  ate?: string;
+  /** Base 0. */
+  page: number;
+}): Promise<Pagina<Acompanhamento>> {
+  return request<Pagina<Acompanhamento>>(
+    `/api/acompanhamentos${buildQuery({
+      q: params.q,
+      servicoId: params.servicoId,
+      status: params.status,
+      tipoId: params.tipoId,
+      meus: params.meus ? "true" : undefined,
+      campoData: params.campoData === "dataCriacao" ? params.campoData : undefined,
+      de: params.de,
+      ate: params.ate,
+      page: params.page,
+    })}`,
   );
 }
 
