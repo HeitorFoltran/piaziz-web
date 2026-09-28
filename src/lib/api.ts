@@ -184,7 +184,7 @@ export function createFicha(body: FichaRequest): Promise<Ficha> {
 
 export function atualizarStatusFicha(
   id: number | string,
-  status: "ATIVO" | "PAUSADO" | "ENCERRADO",
+  status: "ATIVO" | "PAUSADO" | "ARQUIVADO",
 ): Promise<Ficha> {
   return request<Ficha>(`/api/fichas/${id}/status?status=${status}`, { method: "PATCH" });
 }

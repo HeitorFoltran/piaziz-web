@@ -19,7 +19,7 @@ const statusOptions = [
   { value: "all", label: "Todos os status" },
   { value: "ATIVO", label: STATUS_LABEL.ATIVO },
   { value: "PAUSADO", label: STATUS_LABEL.PAUSADO },
-  { value: "ENCERRADO", label: STATUS_LABEL.ENCERRADO },
+  { value: "ARQUIVADO", label: STATUS_LABEL.ARQUIVADO },
 ];
 
 type CampoData = "dataAtualizacao" | "dataCriacao";
