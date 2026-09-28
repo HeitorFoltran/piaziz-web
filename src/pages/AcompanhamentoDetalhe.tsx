@@ -38,10 +38,6 @@ const categoriaEncaminhamentoLabel: Record<string, string> = {
   OUTRO: "Outro",
 };
 
-// Antes do lote 5 a API só gravava alterações feitas por alguém diferente de quem criou o
-// registro. Ajustar para a data em que o lote 5 entrar em produção.
-const INICIO_HISTORICO_COMPLETO = "28/09/2026";
-
 // StatusFicha e TiposAcompanhamento têm frase própria (MUDOU_STATUS / ALTEROU_TIPOS), mas ficam
 // aqui para o Record cobrir todos os tipos.
 const TIPO_ALTERACAO_LABEL: Record<AlteracaoFicha["tipoEntidade"], string> = {
@@ -249,10 +245,6 @@ export default function AcompanhamentoDetalhe() {
                 <CardTitle className="text-sm font-semibold text-aziz-blue">Histórico de alterações</CardTitle>
                 {alteracoesExpandidas ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </div>
-              <p className="text-xs text-muted-foreground">
-                Mostra quem alterou o caso e quando. Até {INICIO_HISTORICO_COMPLETO} só eram registradas as alterações feitas
-                por outra pessoa.
-              </p>
             </CardHeader>
             {alteracoesExpandidas && (
               <CardContent className="p-4 pt-0 space-y-3 text-sm">
