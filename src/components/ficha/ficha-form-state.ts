@@ -134,6 +134,19 @@ export type AcolhimentoFormState = {
   dependenteSofreuViolencia: string;
   dependentePrecisaAuxilioMedico: string;
   categoriaClassificacao: string;
+  sugereSaudeGeral: string;
+  sugereSaudeGeralQual: string;
+  sugereSaudeMental: string;
+  sugereSaudeMentalQual: string;
+  sugereHabitacao: string;
+  sugereHabitacaoQual: string;
+  sugereTrabalhoEmprego: string;
+  sugereTrabalhoEmpregoQual: string;
+  sugereAssistenciaSocial: string;
+  sugereAssistenciaSocialQual: string;
+  sugereAssistenciaEducacional: string;
+  sugereAssistenciaEducacionalQual: string;
+  sugereOutro: string;
   observacoesRelevantes: string;
   responsavelAcolhimentoJuridico: string;
 };
@@ -153,6 +166,19 @@ export const emptyAcolhimentoForm: AcolhimentoFormState = {
   dependenteSofreuViolencia: "",
   dependentePrecisaAuxilioMedico: "",
   categoriaClassificacao: "",
+  sugereSaudeGeral: "",
+  sugereSaudeGeralQual: "",
+  sugereSaudeMental: "",
+  sugereSaudeMentalQual: "",
+  sugereHabitacao: "",
+  sugereHabitacaoQual: "",
+  sugereTrabalhoEmprego: "",
+  sugereTrabalhoEmpregoQual: "",
+  sugereAssistenciaSocial: "",
+  sugereAssistenciaSocialQual: "",
+  sugereAssistenciaEducacional: "",
+  sugereAssistenciaEducacionalQual: "",
+  sugereOutro: "",
   observacoesRelevantes: "",
   responsavelAcolhimentoJuridico: "",
 };
@@ -192,6 +218,8 @@ const fromNum = (v: number | null | undefined): string => (v == null ? "" : Stri
 const fromStr = (v: string | null | undefined): string => v ?? "";
 
 export function fichaToFormState(f: Ficha | Nullable<FichaRequest>): FichaFormState {
+  const necessidadesImediatas: string[] = f.necessidadesImediatas ?? [];
+  const necessidadeOutraDescricao = fromStr(f.necessidadeOutraDescricao);
   return {
     nome: f.nome ?? "",
     cpf: f.cpf ?? "",
@@ -209,8 +237,12 @@ export function fichaToFormState(f: Ficha | Nullable<FichaRequest>): FichaFormSt
     ondeMoramFilhos: f.ondeMoramFilhos ?? "",
     supervisaoFilhos: f.supervisaoFilhos ?? "",
     vagasNecessarias: f.vagasNecessarias ?? [],
-    necessidadesImediatas: f.necessidadesImediatas ?? [],
-    necessidadeOutraDescricao: fromStr(f.necessidadeOutraDescricao),
+    // Fichas antigas gravavam só a descrição, sem OUTRO: marca para o texto não sumir da tela.
+    necessidadesImediatas:
+      necessidadeOutraDescricao.trim() && !necessidadesImediatas.includes("OUTRO")
+        ? [...necessidadesImediatas, "OUTRO"]
+        : necessidadesImediatas,
+    necessidadeOutraDescricao,
   };
 }
 
@@ -233,7 +265,8 @@ export function fichaFormToRequest(form: FichaFormState, status: string): FichaR
     supervisaoFilhos: (form.supervisaoFilhos || undefined) as FichaRequest["supervisaoFilhos"],
     vagasNecessarias: form.vagasNecessarias as FichaRequest["vagasNecessarias"],
     necessidadesImediatas: form.necessidadesImediatas as FichaRequest["necessidadesImediatas"],
-    necessidadeOutraDescricao: form.necessidadeOutraDescricao || undefined,
+    // Sem OUTRO marcado a descrição não vai: a API marcaria OUTRO de novo ao recebê-la.
+    necessidadeOutraDescricao: form.necessidadesImediatas.includes("OUTRO") ? form.necessidadeOutraDescricao || undefined : undefined,
     status,
   };
 }
@@ -330,6 +363,19 @@ export function acolhimentoToFormState(a: AcolhimentoEquipe | null | undefined):
     dependenteSofreuViolencia: fromBool(a.dependenteSofreuViolencia),
     dependentePrecisaAuxilioMedico: fromBool(a.dependentePrecisaAuxilioMedico),
     categoriaClassificacao: a.categoriaClassificacao ?? "",
+    sugereSaudeGeral: fromBool(a.sugereSaudeGeral),
+    sugereSaudeGeralQual: fromStr(a.sugereSaudeGeralQual),
+    sugereSaudeMental: fromBool(a.sugereSaudeMental),
+    sugereSaudeMentalQual: fromStr(a.sugereSaudeMentalQual),
+    sugereHabitacao: fromBool(a.sugereHabitacao),
+    sugereHabitacaoQual: fromStr(a.sugereHabitacaoQual),
+    sugereTrabalhoEmprego: fromBool(a.sugereTrabalhoEmprego),
+    sugereTrabalhoEmpregoQual: fromStr(a.sugereTrabalhoEmpregoQual),
+    sugereAssistenciaSocial: fromBool(a.sugereAssistenciaSocial),
+    sugereAssistenciaSocialQual: fromStr(a.sugereAssistenciaSocialQual),
+    sugereAssistenciaEducacional: fromBool(a.sugereAssistenciaEducacional),
+    sugereAssistenciaEducacionalQual: fromStr(a.sugereAssistenciaEducacionalQual),
+    sugereOutro: fromStr(a.sugereOutro),
     observacoesRelevantes: fromStr(a.observacoesRelevantes),
     responsavelAcolhimentoJuridico: fromStr(a.responsavelAcolhimentoJuridico),
   };
@@ -351,6 +397,19 @@ export function acolhimentoFormToRequest(form: AcolhimentoFormState): Acolhiment
     dependenteSofreuViolencia: toBool(form.dependenteSofreuViolencia),
     dependentePrecisaAuxilioMedico: toBool(form.dependentePrecisaAuxilioMedico),
     categoriaClassificacao: (form.categoriaClassificacao || undefined) as AcolhimentoEquipeRequest["categoriaClassificacao"],
+    sugereSaudeGeral: toBool(form.sugereSaudeGeral),
+    sugereSaudeGeralQual: form.sugereSaudeGeralQual || undefined,
+    sugereSaudeMental: toBool(form.sugereSaudeMental),
+    sugereSaudeMentalQual: form.sugereSaudeMentalQual || undefined,
+    sugereHabitacao: toBool(form.sugereHabitacao),
+    sugereHabitacaoQual: form.sugereHabitacaoQual || undefined,
+    sugereTrabalhoEmprego: toBool(form.sugereTrabalhoEmprego),
+    sugereTrabalhoEmpregoQual: form.sugereTrabalhoEmpregoQual || undefined,
+    sugereAssistenciaSocial: toBool(form.sugereAssistenciaSocial),
+    sugereAssistenciaSocialQual: form.sugereAssistenciaSocialQual || undefined,
+    sugereAssistenciaEducacional: toBool(form.sugereAssistenciaEducacional),
+    sugereAssistenciaEducacionalQual: form.sugereAssistenciaEducacionalQual || undefined,
+    sugereOutro: form.sugereOutro || undefined,
     observacoesRelevantes: form.observacoesRelevantes || undefined,
     responsavelAcolhimentoJuridico: form.responsavelAcolhimentoJuridico || undefined,
   };

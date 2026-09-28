@@ -18,8 +18,9 @@ export function RadioOptionList({ idPrefix, options, value, onValueChange, class
     <RadioGroup className={className} value={value} onValueChange={onValueChange}>
       {normalized.map((o) => (
         <div key={o.v} className="flex items-center gap-3">
-          <RadioGroupItem value={o.v} id={`${idPrefix}-${o.v}`} />
-          <Label htmlFor={`${idPrefix}-${o.v}`} className="font-normal text-sm">{o.l}</Label>
+          {/* shrink-0 e leading-snug: rótulos longos (classificação) quebram linha sem espremer o radio. */}
+          <RadioGroupItem value={o.v} id={`${idPrefix}-${o.v}`} className="shrink-0" />
+          <Label htmlFor={`${idPrefix}-${o.v}`} className="font-normal text-sm leading-snug">{o.l}</Label>
         </div>
       ))}
     </RadioGroup>
