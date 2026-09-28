@@ -302,6 +302,19 @@ export interface AcolhimentoEquipe {
   dependenteSofreuViolencia: boolean | null;
   dependentePrecisaAuxilioMedico: boolean | null;
   categoriaClassificacao: CategoriaClassificacao | null;
+  sugereSaudeGeral: boolean | null;
+  sugereSaudeGeralQual: string | null;
+  sugereSaudeMental: boolean | null;
+  sugereSaudeMentalQual: string | null;
+  sugereHabitacao: boolean | null;
+  sugereHabitacaoQual: string | null;
+  sugereTrabalhoEmprego: boolean | null;
+  sugereTrabalhoEmpregoQual: string | null;
+  sugereAssistenciaSocial: boolean | null;
+  sugereAssistenciaSocialQual: string | null;
+  sugereAssistenciaEducacional: boolean | null;
+  sugereAssistenciaEducacionalQual: string | null;
+  sugereOutro: string | null;
   observacoesRelevantes: string | null;
   responsavelAcolhimentoJuridico: string | null;
 }
@@ -321,6 +334,19 @@ export interface AcolhimentoEquipeRequest {
   dependenteSofreuViolencia?: boolean | null;
   dependentePrecisaAuxilioMedico?: boolean | null;
   categoriaClassificacao?: CategoriaClassificacao | null;
+  sugereSaudeGeral?: boolean | null;
+  sugereSaudeGeralQual?: string;
+  sugereSaudeMental?: boolean | null;
+  sugereSaudeMentalQual?: string;
+  sugereHabitacao?: boolean | null;
+  sugereHabitacaoQual?: string;
+  sugereTrabalhoEmprego?: boolean | null;
+  sugereTrabalhoEmpregoQual?: string;
+  sugereAssistenciaSocial?: boolean | null;
+  sugereAssistenciaSocialQual?: string;
+  sugereAssistenciaEducacional?: boolean | null;
+  sugereAssistenciaEducacionalQual?: string;
+  sugereOutro?: string;
   observacoesRelevantes?: string;
   responsavelAcolhimentoJuridico?: string;
 }

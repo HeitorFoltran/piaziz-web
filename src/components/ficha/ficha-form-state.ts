@@ -134,6 +134,19 @@ export type AcolhimentoFormState = {
   dependenteSofreuViolencia: string;
   dependentePrecisaAuxilioMedico: string;
   categoriaClassificacao: string;
+  sugereSaudeGeral: string;
+  sugereSaudeGeralQual: string;
+  sugereSaudeMental: string;
+  sugereSaudeMentalQual: string;
+  sugereHabitacao: string;
+  sugereHabitacaoQual: string;
+  sugereTrabalhoEmprego: string;
+  sugereTrabalhoEmpregoQual: string;
+  sugereAssistenciaSocial: string;
+  sugereAssistenciaSocialQual: string;
+  sugereAssistenciaEducacional: string;
+  sugereAssistenciaEducacionalQual: string;
+  sugereOutro: string;
   observacoesRelevantes: string;
   responsavelAcolhimentoJuridico: string;
 };
@@ -153,6 +166,19 @@ export const emptyAcolhimentoForm: AcolhimentoFormState = {
   dependenteSofreuViolencia: "",
   dependentePrecisaAuxilioMedico: "",
   categoriaClassificacao: "",
+  sugereSaudeGeral: "",
+  sugereSaudeGeralQual: "",
+  sugereSaudeMental: "",
+  sugereSaudeMentalQual: "",
+  sugereHabitacao: "",
+  sugereHabitacaoQual: "",
+  sugereTrabalhoEmprego: "",
+  sugereTrabalhoEmpregoQual: "",
+  sugereAssistenciaSocial: "",
+  sugereAssistenciaSocialQual: "",
+  sugereAssistenciaEducacional: "",
+  sugereAssistenciaEducacionalQual: "",
+  sugereOutro: "",
   observacoesRelevantes: "",
   responsavelAcolhimentoJuridico: "",
 };
@@ -330,6 +356,19 @@ export function acolhimentoToFormState(a: AcolhimentoEquipe | null | undefined):
     dependenteSofreuViolencia: fromBool(a.dependenteSofreuViolencia),
     dependentePrecisaAuxilioMedico: fromBool(a.dependentePrecisaAuxilioMedico),
     categoriaClassificacao: a.categoriaClassificacao ?? "",
+    sugereSaudeGeral: fromBool(a.sugereSaudeGeral),
+    sugereSaudeGeralQual: fromStr(a.sugereSaudeGeralQual),
+    sugereSaudeMental: fromBool(a.sugereSaudeMental),
+    sugereSaudeMentalQual: fromStr(a.sugereSaudeMentalQual),
+    sugereHabitacao: fromBool(a.sugereHabitacao),
+    sugereHabitacaoQual: fromStr(a.sugereHabitacaoQual),
+    sugereTrabalhoEmprego: fromBool(a.sugereTrabalhoEmprego),
+    sugereTrabalhoEmpregoQual: fromStr(a.sugereTrabalhoEmpregoQual),
+    sugereAssistenciaSocial: fromBool(a.sugereAssistenciaSocial),
+    sugereAssistenciaSocialQual: fromStr(a.sugereAssistenciaSocialQual),
+    sugereAssistenciaEducacional: fromBool(a.sugereAssistenciaEducacional),
+    sugereAssistenciaEducacionalQual: fromStr(a.sugereAssistenciaEducacionalQual),
+    sugereOutro: fromStr(a.sugereOutro),
     observacoesRelevantes: fromStr(a.observacoesRelevantes),
     responsavelAcolhimentoJuridico: fromStr(a.responsavelAcolhimentoJuridico),
   };
@@ -351,6 +390,19 @@ export function acolhimentoFormToRequest(form: AcolhimentoFormState): Acolhiment
     dependenteSofreuViolencia: toBool(form.dependenteSofreuViolencia),
     dependentePrecisaAuxilioMedico: toBool(form.dependentePrecisaAuxilioMedico),
     categoriaClassificacao: (form.categoriaClassificacao || undefined) as AcolhimentoEquipeRequest["categoriaClassificacao"],
+    sugereSaudeGeral: toBool(form.sugereSaudeGeral),
+    sugereSaudeGeralQual: form.sugereSaudeGeralQual || undefined,
+    sugereSaudeMental: toBool(form.sugereSaudeMental),
+    sugereSaudeMentalQual: form.sugereSaudeMentalQual || undefined,
+    sugereHabitacao: toBool(form.sugereHabitacao),
+    sugereHabitacaoQual: form.sugereHabitacaoQual || undefined,
+    sugereTrabalhoEmprego: toBool(form.sugereTrabalhoEmprego),
+    sugereTrabalhoEmpregoQual: form.sugereTrabalhoEmpregoQual || undefined,
+    sugereAssistenciaSocial: toBool(form.sugereAssistenciaSocial),
+    sugereAssistenciaSocialQual: form.sugereAssistenciaSocialQual || undefined,
+    sugereAssistenciaEducacional: toBool(form.sugereAssistenciaEducacional),
+    sugereAssistenciaEducacionalQual: form.sugereAssistenciaEducacionalQual || undefined,
+    sugereOutro: form.sugereOutro || undefined,
     observacoesRelevantes: form.observacoesRelevantes || undefined,
     responsavelAcolhimentoJuridico: form.responsavelAcolhimentoJuridico || undefined,
   };
