@@ -3,9 +3,19 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Cadastros from "./Cadastros";
-import { createProfissional, getFichas, getHistoricoConta, getProfissionais, getServicos } from "@/lib/api";
+import {
+  createProfissional,
+  excluirServico,
+  excluirTipoAcompanhamento,
+  getFichas,
+  getHistoricoConta,
+  getProfissionais,
+  getServicos,
+  getTiposAcompanhamento,
+} from "@/lib/api";
 import { useAuth, type Perfil } from "@/contexts/AuthContext";
 import type { Profissional } from "@/types/api";
+import { toast } from "sonner";
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -16,6 +26,9 @@ vi.mock("@/lib/api", async (importOriginal) => {
     getProfissionais: vi.fn(),
     createProfissional: vi.fn(),
     getHistoricoConta: vi.fn(),
+    getTiposAcompanhamento: vi.fn(),
+    excluirServico: vi.fn(),
+    excluirTipoAcompanhamento: vi.fn(),
   };
 });
 
@@ -252,5 +265,53 @@ describe("Cadastros - histórico de uma conta", () => {
     renderEm("/cadastros?tab=profissionais", perfil());
     await screen.findByRole("button", { name: "Histórico de Carlos" });
     expect(getHistoricoConta).not.toHaveBeenCalled();
+  });
+});
+
+describe("Cadastros - exclusão de serviços e tipos", () => {
+  it("só deixa excluir o serviço que não está em uso", async () => {
+    vi.mocked(getServicos).mockResolvedValue([
+      { id: 1, nome: "Jurídico", emUso: true },
+      { id: 2, nome: "Psicologia", emUso: false },
+    ]);
+    vi.mocked(excluirServico).mockResolvedValue(undefined);
+    renderEm("/cadastros?tab=servicos", perfil());
+
+    expect(await screen.findByRole("button", { name: "Excluir serviço Jurídico" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Excluir serviço Psicologia" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Psicologia")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Excluir" }));
+
+    await waitFor(() => expect(excluirServico).toHaveBeenCalledWith(2));
+    await waitFor(() => expect(toast.success).toHaveBeenCalledWith("Serviço excluído."));
+  });
+
+  it("cancelar não exclui", async () => {
+    vi.mocked(getServicos).mockResolvedValue([{ id: 2, nome: "Psicologia", emUso: false }]);
+    renderEm("/cadastros?tab=servicos", perfil());
+
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir serviço Psicologia" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(excluirServico).not.toHaveBeenCalled();
+  });
+
+  it("mostra o motivo quando a API recusa a exclusão do tipo", async () => {
+    vi.mocked(getTiposAcompanhamento).mockResolvedValue([{ id: 5, nome: "Jurídico", emUso: false }]);
+    vi.mocked(excluirTipoAcompanhamento).mockRejectedValue(
+      new Error("Não é possível excluir: o tipo está atribuído a 1 caso(s)."),
+    );
+    renderEm("/cadastros?tab=tipos-acompanhamento", perfil());
+
+    fireEvent.click(await screen.findByRole("button", { name: "Excluir tipo Jurídico" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Excluir" }));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Não é possível excluir: o tipo está atribuído a 1 caso(s)."),
+    );
+    expect(excluirTipoAcompanhamento).toHaveBeenCalledWith(5);
   });
 });

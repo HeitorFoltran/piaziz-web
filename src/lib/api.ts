@@ -242,6 +242,11 @@ export function atualizarServico(id: number, body: ServicoRequest): Promise<Serv
   return request<Servico>(`/api/servicos/${id}`, { method: "PUT", body: JSON.stringify(body) });
 }
 
+// A API recusa (400) se o serviço estiver em uso, com a mensagem do motivo.
+export function excluirServico(id: number): Promise<void> {
+  return request<void>(`/api/servicos/${id}`, { method: "DELETE" });
+}
+
 export function getTiposAcompanhamento(): Promise<TipoAcompanhamento[]> {
   return request<TipoAcompanhamento[]>("/api/tipos-acompanhamento");
 }
@@ -258,6 +263,11 @@ export function atualizarTipoAcompanhamento(id: number, body: TipoAcompanhamento
     method: "PUT",
     body: JSON.stringify(body),
   });
+}
+
+// A API recusa (400) se o tipo estiver atribuído a algum caso, com a mensagem do motivo.
+export function excluirTipoAcompanhamento(id: number): Promise<void> {
+  return request<void>(`/api/tipos-acompanhamento/${id}`, { method: "DELETE" });
 }
 
 export function getProfissionais(params?: {

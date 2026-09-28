@@ -4,7 +4,7 @@ import { ProfissionaisTab } from "@/components/profissionais/ProfissionaisTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Search, Plus, Share2, Pencil } from "lucide-react";
+import { Search, Plus, Share2, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import {
   getTiposAcompanhamento,
   createTipoAcompanhamento,
   atualizarTipoAcompanhamento,
+  excluirServico,
+  excluirTipoAcompanhamento,
 } from "@/lib/api";
 import type { Servico, ServicoRequest, TipoAcompanhamento, TipoAcompanhamentoRequest } from "@/types/api";
 
@@ -61,6 +63,12 @@ function ErrorCard({ message }: { message?: string }) {
 const emptyServico: ServicoRequest = { nome: "" };
 const emptyTipoAcompanhamento: TipoAcompanhamentoRequest = { nome: "" };
 
+type ItemExclusao = { tipo: "servico" | "tipo-acompanhamento"; id: number; nome: string };
+
+// Sem hover no celular: lá os botões ficam sempre visíveis.
+const ACOES_CARD_CLASS =
+  "absolute top-2 right-2 flex gap-1 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity";
+
 export default function Cadastros() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { auth } = useAuth();
@@ -80,6 +88,8 @@ export default function Cadastros() {
   const [tipoModalOpen, setTipoModalOpen] = useState(false);
   const [tipoEditando, setTipoEditando] = useState<TipoAcompanhamento | null>(null);
   const [tipoForm, setTipoForm] = useState<TipoAcompanhamentoRequest>(emptyTipoAcompanhamento);
+
+  const [exclusao, setExclusao] = useState<ItemExclusao | null>(null);
 
   useEffect(() => {
     if (action === "nova") setShareOpen(true);
@@ -217,6 +227,28 @@ export default function Cadastros() {
 
   const isPendingTipo = criarTipoMutation.isPending || editarTipoMutation.isPending;
 
+  const excluirMutation = useMutation({
+    mutationFn: (item: ItemExclusao) =>
+      item.tipo === "servico" ? excluirServico(item.id) : excluirTipoAcompanhamento(item.id),
+    onSuccess: (_, item) => {
+      queryClient.invalidateQueries({ queryKey: [item.tipo === "servico" ? "servicos" : "tipos-acompanhamento"] });
+      setExclusao(null);
+      toast.success(item.tipo === "servico" ? "Serviço excluído." : "Tipo de acompanhamento excluído.");
+    },
+    // A lista pode estar velha (alguém usou o item depois que a tela carregou): recarrega para o botão refletir o uso.
+    onError: (err: Error, item) => {
+      queryClient.invalidateQueries({ queryKey: [item.tipo === "servico" ? "servicos" : "tipos-acompanhamento"] });
+      setExclusao(null);
+      toast.error(err.message);
+    },
+  });
+
+  const pedirExclusao = (item: ItemExclusao, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExclusao(item);
+  };
+
   const setTab = (tab: string) => {
     setSearchParams({ tab });
     setSearch("");
@@ -303,17 +335,31 @@ export default function Cadastros() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {(servicosQuery.data ?? []).map((s) => (
                   <Card key={s.id} className="hover:border-aziz-blue/30 transition-colors group relative">
-                    <CardContent className="p-6 flex flex-col items-center text-center">
+                    <CardContent className="p-6 pt-10 md:pt-6 flex flex-col items-center text-center">
                       <span className="text-sm font-medium text-foreground">{s.nome}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
-                        onClick={(e) => abrirModalEditar(s, e)}
-                        title="Editar serviço"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
+                      <div className={ACOES_CARD_CLASS}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          onClick={(e) => abrirModalEditar(s, e)}
+                          title="Editar serviço"
+                          aria-label={`Editar serviço ${s.nome}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={(e) => pedirExclusao({ tipo: "servico", id: s.id, nome: s.nome }, e)}
+                          disabled={s.emUso}
+                          title={s.emUso ? "Em uso em encaminhamentos ou profissionais: não pode ser excluído" : "Excluir serviço"}
+                          aria-label={`Excluir serviço ${s.nome}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -340,17 +386,31 @@ export default function Cadastros() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {(tiposAcompanhamentoQuery.data ?? []).map((t) => (
                   <Card key={t.id} className="hover:border-aziz-blue/30 transition-colors group relative">
-                    <CardContent className="p-6 flex flex-col items-center text-center">
+                    <CardContent className="p-6 pt-10 md:pt-6 flex flex-col items-center text-center">
                       <span className="text-sm font-medium text-foreground">{t.nome}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0"
-                        onClick={(e) => abrirModalTipoEditar(t, e)}
-                        title="Editar tipo de acompanhamento"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
+                      <div className={ACOES_CARD_CLASS}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0"
+                          onClick={(e) => abrirModalTipoEditar(t, e)}
+                          title="Editar tipo de acompanhamento"
+                          aria-label={`Editar tipo ${t.nome}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                          onClick={(e) => pedirExclusao({ tipo: "tipo-acompanhamento", id: t.id, nome: t.nome }, e)}
+                          disabled={t.emUso}
+                          title={t.emUso ? "Atribuído a algum caso: não pode ser excluído" : "Excluir tipo de acompanhamento"}
+                          aria-label={`Excluir tipo ${t.nome}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -441,6 +501,32 @@ export default function Cadastros() {
                 disabled={isPendingTipo}
               >
                 {isPendingTipo ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={exclusao !== null} onOpenChange={(aberto) => !aberto && !excluirMutation.isPending && setExclusao(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>
+                {exclusao?.tipo === "servico" ? "Excluir serviço" : "Excluir tipo de acompanhamento"}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Excluir <span className="font-medium text-foreground">{exclusao?.nome}</span>? Essa ação não pode ser
+              desfeita.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExclusao(null)} disabled={excluirMutation.isPending}>
+                Cancelar
+              </Button>
+              <Button
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => exclusao && excluirMutation.mutate(exclusao)}
+                disabled={excluirMutation.isPending}
+              >
+                {excluirMutation.isPending ? "Excluindo..." : "Excluir"}
               </Button>
             </DialogFooter>
           </DialogContent>
