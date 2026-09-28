@@ -125,9 +125,9 @@ export function FichaForm({
           <div>
             <h3 className="font-semibold text-foreground mb-4">1. Registro Processual</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><Label htmlFor="n_processo">Nº do processo MPU</Label><Input id="n_processo" value={acolhimento.numeroProcessoMpu} onChange={(e) => setE("numeroProcessoMpu", e.target.value)} /></div>
+              <div><Label htmlFor="n_processo">Nº do processo MPU</Label><Input id="n_processo" maxLength={40} value={acolhimento.numeroProcessoMpu} onChange={(e) => setE("numeroProcessoMpu", e.target.value)} /></div>
               <div><Label htmlFor="data_acolhimento">Data da reunião de acolhimento</Label><Input id="data_acolhimento" type="date" value={acolhimento.dataReuniaoAcolhimento} onChange={(e) => setE("dataReuniaoAcolhimento", e.target.value)} /></div>
-              <div className="md:col-span-2"><Label htmlFor="servidor">Servidor(a) responsável</Label><Input id="servidor" value={acolhimento.servidorResponsavel} onChange={(e) => setE("servidorResponsavel", e.target.value)} /></div>
+              <div className="md:col-span-2"><Label htmlFor="servidor">Servidor(a) responsável</Label><Input id="servidor" maxLength={150} value={acolhimento.servidorResponsavel} onChange={(e) => setE("servidorResponsavel", e.target.value)} /></div>
             </div>
           </div>
 
@@ -141,7 +141,7 @@ export function FichaForm({
                 <CheckboxOptionList idPrefix="viol" options={TIPOS_VIOLENCIA} value={acolhimento.tiposViolencia} onValueChange={(v) => setE("tiposViolencia", v)} />
               </div>
               {acolhimento.tiposViolencia.includes("OUTRA") && (
-                <div><Label htmlFor="viol_outra">Outra, qual?</Label><Input id="viol_outra" value={acolhimento.tipoViolenciaOutraDescricao} onChange={(e) => setE("tipoViolenciaOutraDescricao", e.target.value)} /></div>
+                <div><Label htmlFor="viol_outra">Outra, qual?</Label><Input id="viol_outra" maxLength={200} value={acolhimento.tipoViolenciaOutraDescricao} onChange={(e) => setE("tipoViolenciaOutraDescricao", e.target.value)} /></div>
               )}
               <div>
                 <Label className="mb-2 block">Frequência/Histórico:</Label>
@@ -157,7 +157,7 @@ export function FichaForm({
                 />
               </div>
               <div><Label className="mb-2 block">Medidas protetivas anteriores?</Label><YesNoRadio idPrefix="medidas-protetivas" value={acolhimento.medidasProtetivasAnteriores} onValueChange={(v) => setE("medidasProtetivasAnteriores", v)} /></div>
-              <div><Label htmlFor="ameacas">Ameaças relatadas</Label><Textarea id="ameacas" value={acolhimento.ameacasRelatadas} onChange={(e) => setE("ameacasRelatadas", e.target.value)} /></div>
+              <div><Label htmlFor="ameacas">Ameaças relatadas</Label><Textarea id="ameacas" maxLength={1000} value={acolhimento.ameacasRelatadas} onChange={(e) => setE("ameacasRelatadas", e.target.value)} /></div>
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export function FichaForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div><Label className="mb-2 block">Necessidade de atendimento médico imediato?</Label><YesNoRadio idPrefix="atend-medico-imediato" value={acolhimento.necessidadeAtendimentoMedicoImediato} onValueChange={(v) => setE("necessidadeAtendimentoMedicoImediato", v)} /></div>
               <div><Label className="mb-2 block">Acompanhamento de saúde mental em curso?</Label><YesNoRadio idPrefix="saude-mental" value={acolhimento.acompanhamentoSaudeMentalEmCurso} onValueChange={(v) => setE("acompanhamentoSaudeMentalEmCurso", v)} /></div>
-              <div className="md:col-span-2"><Label htmlFor="saude_mental_local">Local do acompanhamento de saúde mental</Label><Input id="saude_mental_local" value={acolhimento.acompanhamentoSaudeMentalLocal} onChange={(e) => setE("acompanhamentoSaudeMentalLocal", e.target.value)} /></div>
+              <div className="md:col-span-2"><Label htmlFor="saude_mental_local">Local do acompanhamento de saúde mental</Label><Input id="saude_mental_local" maxLength={150} value={acolhimento.acompanhamentoSaudeMentalLocal} onChange={(e) => setE("acompanhamentoSaudeMentalLocal", e.target.value)} /></div>
             </div>
           </div>
 
@@ -199,11 +199,11 @@ export function FichaForm({
                   <Label className="block">{label}</Label>
                   <YesNoRadio idPrefix={campo} value={acolhimento[campo]} onValueChange={(v) => setE(campo, v)} />
                   {(acolhimento[campo] === "sim" || acolhimento[campoQual]) && (
-                    <div><Label htmlFor={campoQual}>Qual?</Label><Input id={campoQual} value={acolhimento[campoQual]} onChange={(e) => setE(campoQual, e.target.value)} /></div>
+                    <div><Label htmlFor={campoQual}>Qual?</Label><Input id={campoQual} maxLength={200} value={acolhimento[campoQual]} onChange={(e) => setE(campoQual, e.target.value)} /></div>
                   )}
                 </div>
               ))}
-              <div><Label htmlFor="sugere_outro">Outro encaminhamento</Label><Input id="sugere_outro" value={acolhimento.sugereOutro} onChange={(e) => setE("sugereOutro", e.target.value)} /></div>
+              <div><Label htmlFor="sugere_outro">Outro encaminhamento</Label><Input id="sugere_outro" maxLength={300} value={acolhimento.sugereOutro} onChange={(e) => setE("sugereOutro", e.target.value)} /></div>
             </div>
           </div>
 
@@ -211,7 +211,7 @@ export function FichaForm({
 
           <div>
             <h3 className="font-semibold text-foreground mb-4">7. Observações Relevantes</h3>
-            <Textarea placeholder="Observações..." className="min-h-[100px]" value={acolhimento.observacoesRelevantes} onChange={(e) => setE("observacoesRelevantes", e.target.value)} />
+            <Textarea placeholder="Observações..." maxLength={2000} className="min-h-[100px]" value={acolhimento.observacoesRelevantes} onChange={(e) => setE("observacoesRelevantes", e.target.value)} />
           </div>
 
           <Separator />
@@ -219,7 +219,7 @@ export function FichaForm({
           <div>
             <h3 className="font-semibold text-foreground mb-4">8. Responsável pelo acolhimento jurídico</h3>
             <Label htmlFor="resp_juridico">Nome do responsável pelo acolhimento jurídico</Label>
-            <Input id="resp_juridico" value={acolhimento.responsavelAcolhimentoJuridico} onChange={(e) => setE("responsavelAcolhimentoJuridico", e.target.value)} />
+            <Input id="resp_juridico" maxLength={150} value={acolhimento.responsavelAcolhimentoJuridico} onChange={(e) => setE("responsavelAcolhimentoJuridico", e.target.value)} />
           </div>
         </CardContent>
       </Card>
