@@ -45,8 +45,15 @@ export function lerFiltros(params: URLSearchParams): FiltrosAcompanhamentos {
   };
 }
 
+// Página da lista, base 1 como quem lê a URL (?pagina=2 é a segunda). A API é base 0.
+// Qualquer coisa que não seja inteiro >= 1 vira 1.
+export function lerPagina(params: URLSearchParams): number {
+  const pagina = params.get("pagina") ?? "";
+  return /^\d+$/.test(pagina) && Number(pagina) >= 1 ? Number(pagina) : 1;
+}
+
 // Só vai para a URL o que não é padrão.
-export function paramsDosFiltros(q: string, f: FiltrosAcompanhamentos): URLSearchParams {
+export function paramsDosFiltros(q: string, f: FiltrosAcompanhamentos, pagina = 1): URLSearchParams {
   const params = new URLSearchParams();
   if (q) params.set("q", q);
   if (f.meus) params.set("meus", "1");
@@ -56,6 +63,7 @@ export function paramsDosFiltros(q: string, f: FiltrosAcompanhamentos): URLSearc
   if (f.campoData !== FILTROS_PADRAO.campoData) params.set("campoData", f.campoData);
   if (f.de) params.set("de", f.de);
   if (f.ate) params.set("ate", f.ate);
+  if (pagina > 1) params.set("pagina", String(pagina));
   return params;
 }
 
