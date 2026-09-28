@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { User } from "lucide-react";
+import { Menu, User, X } from "lucide-react";
 import { UserMenu } from "@/components/UserMenu";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -19,6 +20,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { auth } = useAuth();
   const navItems = auth?.role === "ESTAGIARIO" ? navItemsEstagiario : navItemsEquipe;
+  // Abaixo de sm os links não cabem na largura do celular: viram uma lista aberta por este botão.
+  const [menuAberto, setMenuAberto] = useState(false);
+
+  function isActive(path: string) {
+    return location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
+  }
+
+  function linkClass(path: string) {
+    return `px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+      isActive(path) ? "text-primary bg-muted" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+    }`;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -28,27 +41,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-logo text-2xl font-black tracking-tight text-primary">AZIZ</span>
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">defensoria</span>
           </Link>
-          <nav className="flex items-center gap-1">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path ||
-                (item.path !== "/" && location.pathname.startsWith(item.path));
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? "text-primary bg-muted"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+          <nav className="hidden sm:flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link key={item.path} to={item.path} className={linkClass(item.path)}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
-          <UserMenu />
+          <div className="flex items-center gap-1">
+            <UserMenu />
+            <button
+              type="button"
+              className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              aria-label="Abrir menu"
+              aria-expanded={menuAberto}
+              aria-controls="menu-celular"
+              onClick={() => setMenuAberto((aberto) => !aberto)}
+            >
+              {menuAberto ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
+        {menuAberto && (
+          <nav id="menu-celular" className="sm:hidden container flex flex-col gap-1 pb-3">
+            {navItems.map((item) => (
+              <Link key={item.path} to={item.path} className={linkClass(item.path)} onClick={() => setMenuAberto(false)}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
       </header>
 
       <main className="flex-1">{children}</main>
@@ -59,7 +81,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-logo text-xl font-black">AZIZ</span>
             <span className="text-xs opacity-70">defensoria</span>
           </div>
-          <nav className="flex items-center gap-6 text-sm opacity-80">
+          <nav className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 text-sm opacity-80">
             {navItems.map((item) => (
               <Link key={item.path} to={item.path} className="hover:opacity-100 transition-opacity">
                 {item.label}
