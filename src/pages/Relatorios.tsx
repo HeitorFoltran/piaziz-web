@@ -1,3 +1,5 @@
+// Fora da navegação desde o lote 6 (2026-09): as métricas vão ser reformuladas. Para reativar,
+// voltar a rota em App.tsx e o item em Layout.tsx.
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
